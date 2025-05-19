@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Douji Backend", "Douji Backend\Douji Backend.csproj", "{BA43D58B-06A5-4BAC-BE29-4E547326D1C1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BA43D58B-06A5-4BAC-BE29-4E547326D1C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA43D58B-06A5-4BAC-BE29-4E547326D1C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA43D58B-06A5-4BAC-BE29-4E547326D1C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA43D58B-06A5-4BAC-BE29-4E547326D1C1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {98409423-993A-4ECA-8CF9-863941672819}
+	EndGlobalSection
+EndGlobal
