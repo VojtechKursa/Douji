@@ -1,0 +1,40 @@
+@startuml Abstracted YouTube Player States
+
+hide empty description
+
+state Unstarted
+
+state Buffering
+state Playing
+state Paused
+
+state Ended
+
+[*] --> Unstarted
+
+Unstarted --> Buffering : Initial play
+
+Buffering --> Playing : Video buffered
+Buffering --> Paused : Pause
+
+Playing --> Paused : Pause
+Playing --> Buffering : Slow connection
+
+Paused --> Buffering : Play when unbuffered
+Paused --> Playing : Play
+
+Paused -[#blue]-> Paused : seek
+Playing -[#blue]-> Buffering : seek when unbuffered
+Buffering -[#blue]-> Buffering : seek
+Playing -[#blue]-> Playing : seek
+
+Playing --> Ended
+Paused --> Ended
+Buffering --> Ended
+Unstarted --> Ended
+
+Ended -right-> Buffering : re-play
+
+note "New video resets state" as N1
+
+@enduml

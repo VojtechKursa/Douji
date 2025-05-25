@@ -4,11 +4,16 @@
 		"buildtransitive",
 		"contentfiles",
 		"Douji",
+		"enduml",
 		"esproj",
+		"highres",
 		"signalr",
+		"startuml",
 		"Swashbuckle",
 		"turbopack",
-		"Vitest"
+		"Unstarted",
+		"Vitest",
+		"youtu"
 	],
 	"cSpell.ignorePaths": [
 		"package-lock.json",
@@ -19,5 +24,7 @@
 		".vscode",
 		".vscode-insiders",
 		"**/.gitignore"
-	]
+	],
+	"plantuml.exportOutDir": "docs/out",
+	"plantuml.exportSubFolder": false
 }
