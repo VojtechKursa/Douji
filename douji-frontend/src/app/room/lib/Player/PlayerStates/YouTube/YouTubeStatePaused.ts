@@ -14,7 +14,7 @@ export class YouTubeStatePaused extends DoujiPlayerStatePaused<PlayerStates> {
 		state: PlayerStates,
 		player: DoujiVideoPlayer<PlayerStates>
 	): Promise<DoujiPlayerState<PlayerStates> | null> {
-		const time = await player.getCurrentTime();
+		const videoTime = await player.getCurrentVideoTime();
 
 		switch (state) {
 			case PlayerStates.ENDED:
@@ -25,7 +25,7 @@ export class YouTubeStatePaused extends DoujiPlayerStatePaused<PlayerStates> {
 				this.playingTransitionTimerId = setTimeout(() => {
 					player.changeState(
 						new YouTubeStateBuffering(
-							time ?? 0,
+							videoTime ?? 0,
 							false,
 							new Date(Date.now() - this.playingTransitionTimeLimitMs),
 							player
@@ -42,9 +42,9 @@ export class YouTubeStatePaused extends DoujiPlayerStatePaused<PlayerStates> {
 				this.destroy();
 
 				if (state == PlayerStates.PLAYING) {
-					return new YouTubeStatePlaying(time ?? 0, false, new Date());
+					return new YouTubeStatePlaying(videoTime ?? 0, false, new Date());
 				} else {
-					return new YouTubeStatePaused(time ?? 0, false, new Date(), player);
+					return new YouTubeStatePaused(videoTime ?? 0, false, new Date(), player);
 				}
 			default:
 				console.log(
@@ -64,11 +64,11 @@ export class YouTubeStatePaused extends DoujiPlayerStatePaused<PlayerStates> {
 	}
 
 	protected override buildUpdatedState(
-		time: number,
+		videoTime: number,
 		external: boolean,
 		updatedAt: Date,
 		player: DoujiVideoPlayer<PlayerStates>
 	): YouTubeStatePaused {
-		return new YouTubeStatePaused(time, external, updatedAt, player);
+		return new YouTubeStatePaused(videoTime, external, updatedAt, player);
 	}
 }

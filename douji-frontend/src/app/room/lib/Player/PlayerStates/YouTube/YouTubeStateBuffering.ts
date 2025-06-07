@@ -14,11 +14,11 @@ export class YouTubeStateBuffering extends DoujiPlayerStateBuffering<PlayerState
 		switch (state) {
 			case PlayerStates.PAUSED:
 			case PlayerStates.PLAYING:
-				const time = await player.getCurrentTime();
+				const videoTime = await player.getCurrentVideoTime();
 				if (state == PlayerStates.PAUSED) {
-					return new YouTubeStatePaused(time ?? 0, false, new Date(), player);
+					return new YouTubeStatePaused(videoTime ?? 0, false, new Date(), player);
 				} else {
-					return new YouTubeStatePlaying(time ?? 0, false, new Date());
+					return new YouTubeStatePlaying(videoTime ?? 0, false, new Date());
 				}
 			case PlayerStates.ENDED:
 				return new YouTubeStateEnded(false, new Date());
@@ -31,11 +31,11 @@ export class YouTubeStateBuffering extends DoujiPlayerStateBuffering<PlayerState
 	}
 
 	protected override buildUpdatedState(
-		time: number,
+		videoTime: number,
 		external: boolean,
 		updatedAt: Date,
 		player: DoujiVideoPlayer<PlayerStates>
 	): YouTubeStateBuffering {
-		return new YouTubeStateBuffering(time, external, updatedAt, player);
+		return new YouTubeStateBuffering(videoTime, external, updatedAt, player);
 	}
 }

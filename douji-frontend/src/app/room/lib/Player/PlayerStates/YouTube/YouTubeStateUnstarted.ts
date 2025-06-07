@@ -15,7 +15,7 @@ export class YouTubeStateUnstarted extends DoujiPlayerStateUnstarted<PlayerState
 			case PlayerStates.UNSTARTED:
 				return null;
 			case PlayerStates.BUFFERING:
-				return new YouTubeStateBuffering((await player.getCurrentTime()) ?? 0, false, new Date(), player);
+				return new YouTubeStateBuffering((await player.getCurrentVideoTime()) ?? 0, false, new Date(), player);
 			case PlayerStates.ENDED:
 				return new YouTubeStateEnded(false, new Date());
 			default:

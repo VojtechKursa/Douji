@@ -76,7 +76,7 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayer<PlayerStates> {
 		const currentState = this.currentState.state;
 
 		const newSupposedTime = newState.getSupposedCurrentTime();
-		const currentTime = await this.getCurrentTime();
+		const currentTime = await this.getCurrentVideoTime();
 
 		if (
 			newSupposedTime != null &&
@@ -117,20 +117,20 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayer<PlayerStates> {
 
 	public override buildState(
 		state: DoujiPlayerStateEnum,
-		time: number | null,
+		videoTime: number | null,
 		external: boolean,
 		updatedAt: Date
 	): DoujiPlayerState<PlayerStates> {
 		switch (state) {
 			case DoujiPlayerStateEnum.Buffering:
-				if (time == null) throw new InvalidStateError("Attempted to build 'Buffering' state without time");
-				return new YouTubeStateBuffering(time, external, updatedAt, this);
+				if (videoTime == null) throw new InvalidStateError("Attempted to build 'Buffering' state without video time");
+				return new YouTubeStateBuffering(videoTime, external, updatedAt, this);
 			case DoujiPlayerStateEnum.Playing:
-				if (time == null) throw new InvalidStateError("Attempted to build 'Playing' state without time");
-				return new YouTubeStatePlaying(time, external, updatedAt);
+				if (videoTime == null) throw new InvalidStateError("Attempted to build 'Playing' state without video time");
+				return new YouTubeStatePlaying(videoTime, external, updatedAt);
 			case DoujiPlayerStateEnum.Paused:
-				if (time == null) throw new InvalidStateError("Attempted to build 'Paused' state without time");
-				return new YouTubeStatePaused(time, external, updatedAt, this);
+				if (videoTime == null) throw new InvalidStateError("Attempted to build 'Paused' state without video time");
+				return new YouTubeStatePaused(videoTime, external, updatedAt, this);
 			case DoujiPlayerStateEnum.Ended:
 				return new YouTubeStateEnded(external, updatedAt);
 			case DoujiPlayerStateEnum.Unstarted:
@@ -138,7 +138,7 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayer<PlayerStates> {
 		}
 	}
 
-	public override async getCurrentTime(): Promise<number | undefined> {
+	public override async getCurrentVideoTime(): Promise<number | undefined> {
 		if (await this.isVideoLoaded()) return this.player.getCurrentTime();
 		else return undefined;
 	}

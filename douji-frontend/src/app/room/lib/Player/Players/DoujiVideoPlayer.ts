@@ -15,7 +15,7 @@ export const enum VideoQuality {
 }
 
 export abstract class DoujiVideoPlayer<T> {
-	public abstract getCurrentTime(): Promise<number | undefined>;
+	public abstract getCurrentVideoTime(): Promise<number | undefined>;
 	public abstract getDuration(): Promise<number | undefined>;
 	public abstract getBufferedTime(): Promise<number | undefined>;
 
@@ -58,7 +58,7 @@ export abstract class DoujiVideoPlayer<T> {
 
 	public abstract buildState(
 		state: DoujiPlayerStateEnum,
-		time: number | null,
+		videoTime: number | null,
 		external: boolean,
 		updatedAt: Date
 	): DoujiPlayerState<T>;
