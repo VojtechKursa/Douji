@@ -5,7 +5,7 @@ import { ClientList } from "./ClientList";
 import { VideoPlayer } from "./VideoPlayer";
 import { VideoRoomSignalRClient } from "../lib/SignalR/VideoRoomSignalRClient";
 import { VideoUrlField } from "./VideoUrlField";
-import { ConnectionParameters } from "../../lib/ConnectionParameters";
+import { ConnectionParameters } from "@/app/lib/ConnectionParameters";
 
 function getQueryRoomId(query?: string | URLSearchParams): number | null {
 	const searchParams: URLSearchParams =
@@ -25,8 +25,7 @@ function getQueryRoomId(query?: string | URLSearchParams): number | null {
 }
 
 export function VideoRoom() {
-	const [signalRClient, setSignalRClient] =
-		useState<VideoRoomSignalRClient>();
+	const [signalRClient, setSignalRClient] = useState<VideoRoomSignalRClient>();
 
 	useEffect(() => {
 		const queryRoomId = getQueryRoomId();
@@ -42,23 +41,13 @@ export function VideoRoom() {
 			return;
 		}
 
-		const videoRoomClient = new VideoRoomSignalRClient(
-			params.roomId,
-			params.username,
-			params.password
-		);
+		const videoRoomClient = new VideoRoomSignalRClient(params.roomId, params.username, params.password);
 		setSignalRClient(videoRoomClient);
 
-		videoRoomClient.onMethod(
-			"ForcedDisconnect",
-			(reason: string | undefined) => {
-				const reasonText: string =
-					reason == undefined
-						? "No reason given."
-						: `Reason: ${reason}`;
-				alert(`Server closed connection. ${reasonText}`);
-			}
-		);
+		videoRoomClient.onForcedDisconnect((reason: string | undefined) => {
+			const reasonText: string = reason == undefined ? "No reason given." : `Reason: ${reason}`;
+			alert(`Server closed connection. ${reasonText}`);
+		});
 		videoRoomClient.onClose(() => (window.location.href = "/"));
 
 		videoRoomClient.connect();

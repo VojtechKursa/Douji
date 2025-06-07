@@ -30,7 +30,10 @@ namespace Douji.Backend.Migrations
 						.Annotation("Sqlite:Autoincrement", true),
 					roomId = table.Column<int>(type: "INTEGER", nullable: false),
 					name = table.Column<string>(type: "TEXT", nullable: false),
-					connectionId = table.Column<string>(type: "TEXT", nullable: false)
+					connectionId = table.Column<string>(type: "TEXT", nullable: false),
+					clientState = table.Column<int>(type: "INTEGER", nullable: false),
+					videoTime = table.Column<double>(type: "REAL", nullable: true),
+					updatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
 				},
 				constraints: table =>
 				{

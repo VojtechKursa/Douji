@@ -11,4 +11,5 @@ public interface IVideoRoomClient
 	Task UserLeft(HubUserDTO user);
 
 	Task PlayVideo(HubUserDTO user, string url);
+	Task UpdateClientState(HubUserStateDTO userState);
 }

@@ -1,6 +1,6 @@
-import { User } from "./User";
+import { UserState } from "./UserState";
 
 export interface WelcomeData {
-	users: User[];
-	currentlyPlayedUrl: string | null;
+	userStates: UserState[];
+	currentlyPlayedURL: string | null;
 }

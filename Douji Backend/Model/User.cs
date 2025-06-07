@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Douji.Backend.Model;
@@ -16,4 +17,17 @@ public class User
 	public required string Name { get; set; }
 
 	public required string ConnectionId { get; init; }
+
+	public required ClientStateEnum ClientState { get; set; }
+
+	public required double? VideoTime { get; set; }
+
+	public required DateTime UpdatedAt { get; set; }
+
+	public ClientState GetClientState() => new()
+	{
+		State = ClientState,
+		VideoTime = VideoTime,
+		UpdatedAt = UpdatedAt.ToString("O", CultureInfo.InvariantCulture),
+	};
 }
