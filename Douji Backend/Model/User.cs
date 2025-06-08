@@ -5,7 +5,7 @@ namespace Douji.Backend.Model;
 
 public class User
 {
-	public int? Id { get; }
+	public int? Id { get; set; }
 
 	public Room Room { get; }
 
