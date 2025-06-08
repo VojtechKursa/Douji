@@ -1,6 +1,5 @@
 ﻿using System.Globalization;
-using Douji.Backend.Data.State;
-using Douji.Backend.Model;
+using Douji.Backend.Model.ClientStates;
 
 namespace Douji.Backend.SignalR.Data;
 

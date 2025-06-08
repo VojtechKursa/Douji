@@ -1,19 +1,17 @@
 using System.Globalization;
 using Douji.Backend.Data;
-using Douji.Backend.Data.Database.DAO;
-using Douji.Backend.Data.Database.DTO;
-using Douji.Backend.Data.State;
+using Douji.Backend.Data.Database.Interfaces.DAO;
 using Douji.Backend.Model;
+using Douji.Backend.Model.ClientStates;
 using Douji.Backend.SignalR.Data;
 using Douji.Backend.SignalR.Interfaces;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Douji.Backend.SignalR.Hubs;
 
-public class RoomHub(DoujiDbContext database) : Hub<IVideoRoomClient>
+public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>
 {
-	private readonly DoujiDbContext db = database;
+	private readonly IDoujiInMemoryDb db = database;
 
 	private const int allowedTimeDeviationMs = 1000;
 
@@ -21,25 +19,25 @@ public class RoomHub(DoujiDbContext database) : Hub<IVideoRoomClient>
 
 	public async Task Play(string url)
 	{
-		var user = await GetUserDTOAsync(Context.ConnectionId);
+		var user = GetUser(Context.ConnectionId);
 		if (user == null)
 			return;
 
 		var room = user.Room;
-
 		room.CurrentlyPlayedUrl = url;
-		await db.SaveChangesAsync();
 
-		string group = room.Id.ToString();
-		await Clients.Group(group).PlayVideo(HubUserDTO.FromUser(User.FromDatabaseDTO(user)), url);
+		string group = room.IdNotNull.ToString();
+		await Clients.Group(group).PlayVideo(HubUserDTO.FromUser(user), url);
 	}
 
 	public async Task UpdateState(string updatedAt, ClientStateEnum state, double? videoTime)
 	{
-		var userDTO = await GetUserDTOAsync(Context.ConnectionId);
-		if (userDTO == null) return;
+		var user = GetUser(Context.ConnectionId);
+		if (user == null) return;
 
-		string group = userDTO.Room.Id.ToString();
+		Room room = user.Room;
+
+		string group = room.IdNotNull.ToString();
 
 		DateTime updateTime = DateTime.Parse(updatedAt, CultureInfo.InvariantCulture);
 
@@ -49,12 +47,14 @@ public class RoomHub(DoujiDbContext database) : Hub<IVideoRoomClient>
 			updateTime = DateTime.UtcNow;
 		}
 
-		userDTO.ClientState = state;
-		userDTO.VideoTime = videoTime;
-		userDTO.UpdatedAt = updateTime;
-		await db.SaveChangesAsync();
+		user.ClientState = new ClientState()
+		{
+			State = state,
+			VideoTime = videoTime,
+			UpdatedAt = updateTime
+		};
 
-		await Clients.Group(group).UpdateClientState(HubUserStateDTO.FromUser(User.FromDatabaseDTO(userDTO)));
+		await Clients.Group(group).UpdateClientState(HubUserStateDTO.FromUser(user));
 	}
 
 	public override async Task OnConnectedAsync()
@@ -68,76 +68,61 @@ public class RoomHub(DoujiDbContext database) : Hub<IVideoRoomClient>
 
 		var auth = authenticationData.Value;
 
-		var roomDTO = await db.Rooms.FindAsync(auth.roomId);
-		if (roomDTO == null)
+		var room = db.Rooms.Get(auth.roomId);
+		if (room == null)
 		{
 			await ForcedDisconnect("Invalid room");
 			return;
 		}
 
-		if (roomDTO.PasswordHash != null)
+		if (room.PasswordHash != null)
 		{
-			if (auth.password == null || Hash.ToHex(Hash.Digest(auth.password)) != roomDTO.PasswordHash)
+			if (auth.password == null || Hash.ToHex(Hash.Digest(auth.password)) != room.PasswordHash)
 			{
 				await ForcedDisconnect("Invalid password");
 				return;
 			}
 		}
 
-		UserDatabaseDTO user = new()
-		{
-			ConnectionId = Context.ConnectionId,
-			Name = auth.username,
-			Room = roomDTO,
-			ClientState = ClientStateEnum.Unstarted,
-			UpdatedAt = DateTime.UtcNow,
-			VideoTime = null,
-		};
-
-		try
-		{
-			await db.Users.AddAsync(user);
-			await db.SaveChangesAsync();
-		}
-		catch
+		User user = new(null, room, auth.username, Context.ConnectionId);
+		if (!db.Users.Create(user))
 		{
 			await ForcedDisconnect("Invalid or duplicate username");
 			return;
 		}
 
-		await Groups.AddToGroupAsync(Context.ConnectionId, roomDTO.Id.ToString());
-
-		await Clients
-			.GroupExcept(roomDTO.Id.ToString(), [Context.ConnectionId])
-			.UserJoined(HubUserDTO.FromUser(User.FromDatabaseDTO(user)));
+		string groupId = room.IdNotNull.ToString();
 
 		await Clients.Caller.Welcome(new InitialRoomData()
 		{
-			UserStates = [.. roomDTO.Users.Select(User.FromDatabaseDTO).Select(HubUserStateDTO.FromUser)],
-			CurrentlyPlayedURL = roomDTO.CurrentlyPlayedUrl
+			UserStates = [.. room.Users.Select(HubUserStateDTO.FromUser)],
+			CurrentlyPlayedURL = room.CurrentlyPlayedUrl
 		});
+
+		await Groups.AddToGroupAsync(Context.ConnectionId, groupId);
+
+		await Clients
+			.GroupExcept(groupId, [Context.ConnectionId])
+			.UserJoined(HubUserDTO.FromUser(user));
 	}
 
 	public override async Task OnDisconnectedAsync(Exception? exception)
 	{
-		var user = await GetUserDTOAsync(Context.ConnectionId);
+		var user = GetUser(Context.ConnectionId);
 		if (user == null)
 			return;
 
 		var room = user.Room;
-		string group = room.Id.ToString();
+		string group = room.IdNotNull.ToString();
 
 		await Groups.RemoveFromGroupAsync(Context.ConnectionId, group);
 
-		room.Users.Remove(user);
-		db.Users.Remove(user);
-		await db.SaveChangesAsync();
+		db.Users.Delete(room, user.IdNotNull);
 
-		await Clients.Group(group).UserLeft(HubUserDTO.FromUser(User.FromDatabaseDTO(user)));
+		await Clients.Group(group).UserLeft(HubUserDTO.FromUser(user));
 	}
 
-	private async Task<UserDatabaseDTO?> GetUserDTOAsync(string connectionId) =>
-		await db.Users.Where(user => user.ConnectionId == connectionId).FirstOrDefaultAsync();
+	private User? GetUser(string connectionId) => db.Users.Get(connectionId);
 
 	private async Task ForcedDisconnect(string? reason)
 	{

@@ -1,42 +1,24 @@
 ﻿using Douji.Backend.Data;
 using Douji.Backend.Data.Api.Room;
-using Douji.Backend.Data.Database.DTO;
-using Douji.Backend.Data.State;
+using Douji.Backend.Exceptions;
+using Douji.Backend.Model.RoomStates;
 
 namespace Douji.Backend.Model;
 
-public class Room
+public class Room(int? id, string name, string? passwordHash)
 {
-	public int? Id { get; set; }
+	public int? Id { get; set; } = id;
 
-	public string Name { get; set; }
+	public string Name { get; set; } = name;
 
-	public string? PasswordHash { get; set; }
+	public string? PasswordHash { get; set; } = passwordHash;
 
-	public string? CurrentlyPlayedUrl { get; set; }
+	public string? CurrentlyPlayedUrl { get; set; } = null;
 
-	public RoomState RoomState { get; set; }
+	public List<User> Users { get; } = [];
 
 	public bool HasPassword => PasswordHash != null;
-
-
-
-	public Room(int? id, string name, string? passwordHash, RoomState? roomState = null, string? currentlyPlayedUrl = null)
-	{
-		Id = id;
-		Name = name;
-		PasswordHash = passwordHash;
-		CurrentlyPlayedUrl = currentlyPlayedUrl;
-
-		if (roomState == null)
-		{
-			RoomState = new RoomStateUnstarted(DateTime.UtcNow);
-		}
-		else
-		{
-			RoomState = roomState;
-		}
-	}
+	public int IdNotNull => Id ?? throw new UnexpectedNullException(nameof(Id), nameof(Room));
 
 
 
@@ -59,51 +41,5 @@ public class Room
 		string? passwordHash = request.Password != null ? Hash.ToHex(Hash.Digest(request.Password)) : null;
 
 		return new Room(null, request.Name, passwordHash);
-	}
-
-	public RoomDatabaseDTO ToDatabaseDTO()
-	{
-		return new RoomDatabaseDTO()
-		{
-			Id = Id ?? 0,
-			Name = Name,
-			PasswordHash = PasswordHash,
-			CurrentlyPlayedUrl = CurrentlyPlayedUrl,
-			RoomState = RoomState.State,
-			VideoTime = RoomState.VideoTime,
-			RoomStateUpdatedAt = RoomState.UpdatedAt,
-		};
-	}
-
-	public static Room FromDatabaseDTO(RoomDatabaseDTO dto) => new(
-		dto.Id,
-		dto.Name,
-		dto.PasswordHash,
-		dto.GetRoomState(),
-		dto.CurrentlyPlayedUrl
-	);
-}
-
-public static class RoomDatabaseDTOExtensions
-{
-	public static RoomState GetRoomState(this RoomDatabaseDTO dto)
-	{
-		return dto.RoomState switch
-		{
-			RoomStateEnum.Unstarted => new RoomStateUnstarted(dto.RoomStateUpdatedAt),
-			RoomStateEnum.Ended => new RoomStateEnded(dto.RoomStateUpdatedAt),
-			RoomStateEnum.Playing => new RoomStatePlaying(dto.GetVideoTime(), dto.RoomStateUpdatedAt),
-			RoomStateEnum.Paused => new RoomStatePaused(dto.GetVideoTime(), dto.RoomStateUpdatedAt),
-			RoomStateEnum.Waiting => new RoomStateWaiting(dto.GetVideoTime(), dto.RoomStateUpdatedAt),
-			_ => throw new Exception(),
-		};
-	}
-
-	public static double GetVideoTime(this RoomDatabaseDTO dto)
-	{
-		if (!dto.VideoTime.HasValue)
-			throw new Exception();
-
-		return dto.VideoTime.Value;
 	}
 }

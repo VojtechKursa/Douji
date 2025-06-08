@@ -1,4 +1,4 @@
-﻿using Douji.Backend.Model;
+﻿using Douji.Backend.Model.ClientStates;
 
 namespace Douji.Backend.Data.Api.User;
 

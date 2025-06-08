@@ -1,11 +1,11 @@
-﻿using Douji.Backend.Data.Database.DTO;
-using Douji.Backend.Data.State;
+﻿using Douji.Backend.Exceptions;
+using Douji.Backend.Model.ClientStates;
 
 namespace Douji.Backend.Model;
 
 public class User
 {
-	public int Id { get; }
+	public int? Id { get; set; }
 
 	public Room Room { get; }
 
@@ -15,9 +15,11 @@ public class User
 
 	public ClientState ClientState { get; set; }
 
+	public int IdNotNull => Id ?? throw new UnexpectedNullException(nameof(Id), nameof(User));
 
 
-	public User(int id, Room room, string name, string connectionId, ClientState? clientState = null)
+
+	public User(int? id, Room room, string name, string connectionId, ClientState? clientState = null)
 	{
 		Id = id;
 		Room = room;
@@ -37,42 +39,5 @@ public class User
 		{
 			ClientState = clientState;
 		}
-	}
-
-
-
-	public UserDatabaseDTO ToDatabaseDTO()
-	{
-		return new UserDatabaseDTO()
-		{
-			Id = Id,
-			Room = Room.ToDatabaseDTO(),
-			Name = Name,
-			ConnectionId = ConnectionId,
-			ClientState = ClientState.State,
-			UpdatedAt = ClientState.UpdatedAt,
-			VideoTime = ClientState.VideoTime,
-		};
-	}
-
-	public static User FromDatabaseDTO(UserDatabaseDTO dto) => new(
-		dto.Id,
-		Room.FromDatabaseDTO(dto.Room),
-		dto.Name,
-		dto.ConnectionId,
-		dto.GetClientState()
-	);
-}
-
-public static class UserDatabaseDTOExtensions
-{
-	public static ClientState GetClientState(this UserDatabaseDTO dto)
-	{
-		return new ClientState()
-		{
-			State = dto.ClientState,
-			VideoTime = dto.VideoTime,
-			UpdatedAt = dto.UpdatedAt
-		};
 	}
 }
