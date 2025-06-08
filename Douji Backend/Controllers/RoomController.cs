@@ -1,5 +1,5 @@
 ﻿using Douji.Backend.Data.Api.Room;
-using Douji.Backend.Data.Database.DAO;
+using Douji.Backend.Data.Database.Interfaces.DAO;
 using Douji.Backend.Model;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,59 +7,56 @@ namespace Douji.Backend.Controllers;
 
 [ApiController]
 [Route("/api/room")]
-public class RoomController(DoujiDbContext database) : Controller
+public class RoomController(IDoujiInMemoryDb database) : Controller
 {
-	private readonly DoujiDbContext db = database;
+	private readonly IDoujiInMemoryDb db = database;
 
 	[HttpGet]
-	public IActionResult List() => Ok(db.Rooms.OrderBy(r => r.Id).Select(RoomApiResponse.FromRoomDatabaseDTO));
+	public IActionResult List() => Ok(db.Rooms.List().OrderBy(r => r.Id).Select(RoomApiResponse.FromRoom));
 
 	[HttpGet("{id}")]
 	public IActionResult Get(int id)
 	{
-		var roomDTO = db.Rooms.Where(room => room.Id == id).FirstOrDefault();
+		var room = db.Rooms.Get(id);
 
-		return roomDTO == null ? NotFound() : Ok(RoomApiResponse.FromRoomDatabaseDTO(roomDTO));
+		return room == null ? NotFound() : Ok(RoomApiResponse.FromRoom(room));
 	}
 
 	[HttpPut]
 	public IActionResult Create(RoomApiCreateRequest request)
 	{
-		var newRoom = Room.FromApiRequest(request).ToDatabaseDTO();
+		var newRoom = Room.FromApiRequest(request);
 
-		db.Rooms.Add(newRoom);
-		db.SaveChanges();
-
-		return Created($"{HttpContext.Request.Host.Value}/api/room/{newRoom.Id}", RoomApiResponse.FromRoomDatabaseDTO(newRoom));
+		if (db.Rooms.Create(newRoom))
+		{
+			return Created($"{HttpContext.Request.Host.Value}/api/room/{newRoom.Id}", RoomApiResponse.FromRoom(newRoom));
+		}
+		else
+		{
+			return BadRequest();
+		}
 	}
 
 	[HttpPost("{id}")]
 	public IActionResult Update(int id, RoomApiUpdateRequest update)
 	{
-		var roomDTO = db.Rooms.Where(room => room.Id == id).FirstOrDefault();
+		var room = db.Rooms.Get(id);
 
-		if (roomDTO == null) return NotFound();
+		if (room == null) return NotFound();
 
-		Room room = Room.FromDatabaseDTO(roomDTO);
 		room.Update(update);
 
-		var newRoomDTO = room.ToDatabaseDTO();
-
-		db.Update(newRoomDTO);
-		db.SaveChanges();
-
-		return Ok(RoomApiResponse.FromRoomDatabaseDTO(newRoomDTO));
+		return Ok(RoomApiResponse.FromRoom(room));
 	}
 
 	[HttpDelete("{id}")]
 	public IActionResult Delete(int id)
 	{
-		var room = db.Rooms.Where(room => room.Id == id).FirstOrDefault();
+		var room = db.Rooms.Get(id);
 
 		if (room == null) return NotFound();
 
-		db.Rooms.Remove(room);
-		db.SaveChanges();
+		db.Rooms.Delete(room.IdNotNull);
 
 		return NoContent();
 	}

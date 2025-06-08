@@ -1,23 +1,16 @@
 using Douji.Backend.Data.Database.DAO;
+using Douji.Backend.Data.Database.Interfaces.DAO;
 using Douji.Backend.SignalR.Hubs;
-using Microsoft.EntityFrameworkCore;
 
 namespace Douji.Backend
 {
 	public class Program
 	{
-		public static void Main(string[] args)
+		private static void AddCustomServices(WebApplicationBuilder builder) =>
+			builder.Services.AddSingleton<IDoujiInMemoryDb, DoujiInMemoryDb>();
+
+		private static void AddEndpointServices(WebApplicationBuilder builder)
 		{
-			var builder = WebApplication.CreateBuilder(args);
-
-			builder.Services.AddDbContext<DoujiDbContext>(options =>
-			{
-				options
-					.UseLazyLoadingProxies()
-					.UseSqlite(builder.Configuration.GetConnectionString("sqlite") ?? throw new Exception())
-					.UseCamelCaseNamingConvention();
-			});
-
 			builder.Services.AddControllers();
 			builder.Services.AddSignalR(options =>
 			{
@@ -26,7 +19,10 @@ namespace Douji.Backend
 					options.EnableDetailedErrors = true;
 				}
 			});
+		}
 
+		private static void AddSecurityServices(WebApplicationBuilder builder)
+		{
 			builder.Services.AddCors(options =>
 			{
 				options.AddDefaultPolicy(policy =>
@@ -37,20 +33,24 @@ namespace Douji.Backend
 					policy.AllowAnyHeader();
 				});
 			});
+		}
 
-			// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+		private static void AddSwagger(WebApplicationBuilder builder)
+		{
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen();
+		}
+
+		public static void Main(string[] args)
+		{
+			var builder = WebApplication.CreateBuilder(args);
+
+			AddEndpointServices(builder);
+			AddSecurityServices(builder);
+			AddSwagger(builder);
+			AddCustomServices(builder);
 
 			var app = builder.Build();
-
-			if (builder.Configuration.GetValue<bool?>("AutoMigrate") ?? false)
-			{
-				using var scope = app.Services.CreateScope();
-
-				using var db = scope.ServiceProvider.GetService<DoujiDbContext>() ?? throw new Exception();
-				db.Database.Migrate();
-			}
 
 			// Configure the HTTP request pipeline.
 			if (app.Environment.IsDevelopment())

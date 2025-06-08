@@ -1,4 +1,4 @@
-﻿namespace Douji.Backend.Data.State;
+﻿namespace Douji.Backend.Model.ClientStates;
 
 public enum ClientStateEnum
 {
