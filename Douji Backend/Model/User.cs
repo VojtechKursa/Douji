@@ -1,33 +1,78 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Globalization;
-using Microsoft.EntityFrameworkCore;
+﻿using Douji.Backend.Data.Database.DTO;
+using Douji.Backend.Data.State;
 
 namespace Douji.Backend.Model;
 
-[Index(nameof(ConnectionId), IsUnique = true)]
-[Index(nameof(Room), nameof(Name), IsUnique = true)]
 public class User
 {
-	[Key]
-	public int Id { get; init; }
+	public int Id { get; }
 
-	public virtual required Room Room { get; init; }
+	public Room Room { get; }
 
-	[Length(1, 128)]
-	public required string Name { get; set; }
+	public string Name { get; set; }
 
-	public required string ConnectionId { get; init; }
+	public string ConnectionId { get; }
 
-	public required ClientStateEnum ClientState { get; set; }
+	public ClientState ClientState { get; set; }
 
-	public required double? VideoTime { get; set; }
 
-	public required DateTime UpdatedAt { get; set; }
 
-	public ClientState GetClientState() => new()
+	public User(int id, Room room, string name, string connectionId, ClientState? clientState = null)
 	{
-		State = ClientState,
-		VideoTime = VideoTime,
-		UpdatedAt = UpdatedAt.ToString("O", CultureInfo.InvariantCulture),
-	};
+		Id = id;
+		Room = room;
+		Name = name;
+		ConnectionId = connectionId;
+
+		if (clientState == null)
+		{
+			ClientState = new ClientState()
+			{
+				State = ClientStateEnum.Unstarted,
+				UpdatedAt = DateTime.UtcNow,
+				VideoTime = null
+			};
+		}
+		else
+		{
+			ClientState = clientState;
+		}
+	}
+
+
+
+	public UserDatabaseDTO ToDatabaseDTO()
+	{
+		return new UserDatabaseDTO()
+		{
+			Id = Id,
+			Room = Room.ToDatabaseDTO(),
+			Name = Name,
+			ConnectionId = ConnectionId,
+			ClientState = ClientState.State,
+			UpdatedAt = ClientState.UpdatedAt,
+			VideoTime = ClientState.VideoTime,
+		};
+	}
+
+	public static User FromDatabaseDTO(UserDatabaseDTO dto) => new(
+		dto.Id,
+		Room.FromDatabaseDTO(dto.Room),
+		dto.Name,
+		dto.ConnectionId,
+		dto.GetClientState()
+	);
+}
+
+public static class UserDatabaseDTOExtensions
+{
+	public static ClientState GetClientState(this UserDatabaseDTO dto)
+	{
+		return new ClientState()
+		{
+			State = dto.ClientState,
+			VideoTime = dto.VideoTime,
+			UpdatedAt = dto.UpdatedAt
+		};
+	}
 }

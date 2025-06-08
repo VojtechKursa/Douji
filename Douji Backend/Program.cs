@@ -1,4 +1,4 @@
-using Douji.Backend.Data.Database;
+using Douji.Backend.Data.Database.DAO;
 using Douji.Backend.SignalR.Hubs;
 using Microsoft.EntityFrameworkCore;
 

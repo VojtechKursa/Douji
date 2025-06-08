@@ -1,5 +1,5 @@
 ﻿using Douji.Backend.Data.Api.Room;
-using Douji.Backend.Data.Database;
+using Douji.Backend.Data.Database.DAO;
 using Douji.Backend.Model;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,44 +12,49 @@ public class RoomController(DoujiDbContext database) : Controller
 	private readonly DoujiDbContext db = database;
 
 	[HttpGet]
-	public IEnumerable<RoomApiResponse> List() => db.Rooms.OrderBy(r => r.Id).Select(RoomApiResponse.FromRoom);
+	public IActionResult List() => Ok(db.Rooms.OrderBy(r => r.Id).Select(RoomApiResponse.FromRoomDatabaseDTO));
 
 	[HttpGet("{id}")]
 	public IActionResult Get(int id)
 	{
-		Room? room = db.Rooms.Where(room => room.Id == id).FirstOrDefault();
+		var roomDTO = db.Rooms.Where(room => room.Id == id).FirstOrDefault();
 
-		return room == null ? NotFound() : Ok(RoomApiResponse.FromRoom(room));
+		return roomDTO == null ? NotFound() : Ok(RoomApiResponse.FromRoomDatabaseDTO(roomDTO));
 	}
 
 	[HttpPut]
 	public IActionResult Create(RoomApiCreateRequest request)
 	{
-		Room newRoom = Room.FromApiRequest(request);
+		var newRoom = Room.FromApiRequest(request).ToDatabaseDTO();
 
 		db.Rooms.Add(newRoom);
 		db.SaveChanges();
-		return Created($"{HttpContext.Request.Host.Value}/api/room/{newRoom.Id}", RoomApiResponse.FromRoom(newRoom));
+
+		return Created($"{HttpContext.Request.Host.Value}/api/room/{newRoom.Id}", RoomApiResponse.FromRoomDatabaseDTO(newRoom));
 	}
 
 	[HttpPost("{id}")]
 	public IActionResult Update(int id, RoomApiUpdateRequest update)
 	{
-		Room? room = db.Rooms.Where(room => room.Id == id).FirstOrDefault();
+		var roomDTO = db.Rooms.Where(room => room.Id == id).FirstOrDefault();
 
-		if (room == null) return NotFound();
+		if (roomDTO == null) return NotFound();
 
+		Room room = Room.FromDatabaseDTO(roomDTO);
 		room.Update(update);
-		db.Update(room);
+
+		var newRoomDTO = room.ToDatabaseDTO();
+
+		db.Update(newRoomDTO);
 		db.SaveChanges();
 
-		return Ok(RoomApiResponse.FromRoom(room));
+		return Ok(RoomApiResponse.FromRoomDatabaseDTO(newRoomDTO));
 	}
 
 	[HttpDelete("{id}")]
 	public IActionResult Delete(int id)
 	{
-		Room? room = db.Rooms.Where(room => room.Id == id).FirstOrDefault();
+		var room = db.Rooms.Where(room => room.Id == id).FirstOrDefault();
 
 		if (room == null) return NotFound();
 

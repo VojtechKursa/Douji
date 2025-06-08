@@ -13,7 +13,7 @@ public class UserApiResponse
 		return new UserApiResponse()
 		{
 			Name = user.Name,
-			State = user.GetClientState(),
+			State = user.ClientState,
 		};
 	}
 }
