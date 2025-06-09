@@ -1,0 +1,38 @@
+@startuml Video Room States
+
+hide empty description
+
+state Unstarted
+state Waiting : Waiting for\nbuffering clients
+state Playing
+state Paused
+state Ended
+
+[*] --> Unstarted
+
+Unstarted --> Waiting : Play selected video
+
+Playing --> Paused : Pause
+Playing --> Waiting : Client(s) buffering
+
+Paused --> Waiting : Play when unbuffered
+Paused --> Playing : Play
+
+Waiting --> Playing : Everyone buffered
+Waiting --> Paused : Paused when waiting
+
+Ended -right-> Waiting : Re-play
+
+Paused -[#blue]-> Paused : seek
+Waiting -[#blue]-> Waiting : seek
+Playing -[#blue]-> Waiting : seek when unbuffered
+Playing -[#blue]-> Playing : seek
+
+Playing --> Ended
+Paused --> Ended
+Unstarted --> Ended
+Waiting --> Ended
+
+note "New video resets state" as N1
+
+@enduml

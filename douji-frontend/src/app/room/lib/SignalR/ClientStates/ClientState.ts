@@ -61,8 +61,6 @@ export class ClientStateBuffering extends ClientState {
 	}
 
 	public override acceptEvent(state: IDoujiPlayerState): Promise<ClientState | null> {
-		//TODO Implement waiting state
-
 		switch (state.state) {
 			case DoujiPlayerStateEnum.Ended:
 				return Promise.resolve(new ClientStateEnded(state.updatedAt));
@@ -79,16 +77,12 @@ export class ClientStateBuffering extends ClientState {
 	}
 }
 
-//TODO Implement waiting state
-
 export class ClientStatePlaying extends ClientState {
 	public constructor(videoTime: number, updatedAt: Date) {
 		super(ClientStateEnum.Playing, videoTime, updatedAt);
 	}
 
 	public override acceptEvent(state: IDoujiPlayerState): Promise<ClientState | null> {
-		//TODO Implement waiting state
-
 		switch (state.state) {
 			case DoujiPlayerStateEnum.Ended:
 				return Promise.resolve(new ClientStateEnded(state.updatedAt));
@@ -111,8 +105,6 @@ export class ClientStatePaused extends ClientState {
 	}
 
 	public override acceptEvent(state: IDoujiPlayerState): Promise<ClientState | null> {
-		//TODO Implement waiting state
-
 		switch (state.state) {
 			case DoujiPlayerStateEnum.Ended:
 				return Promise.resolve(new ClientStateEnded(state.updatedAt));
@@ -124,6 +116,28 @@ export class ClientStatePaused extends ClientState {
 				return Promise.resolve(new ClientStatePaused(state.videoTime ?? 0, state.updatedAt));
 			default:
 				console.log(`Unexpected client state transition from state PAUSED to ${state.state}. Ignoring it.`);
+				return Promise.resolve(null);
+		}
+	}
+}
+
+export class ClientStateWaiting extends ClientState {
+	public constructor(videoTime: number, updatedAt: Date) {
+		super(ClientStateEnum.Waiting, videoTime, updatedAt);
+	}
+
+	public override acceptEvent(state: IDoujiPlayerState): Promise<ClientState | null> {
+		switch (state.state) {
+			case DoujiPlayerStateEnum.Ended:
+				return Promise.resolve(new ClientStateEnded(state.updatedAt));
+			case DoujiPlayerStateEnum.Paused:
+				return Promise.resolve(new ClientStatePaused(state.videoTime ?? 0, state.updatedAt));
+			case DoujiPlayerStateEnum.Buffering:
+				return Promise.resolve(new ClientStateBuffering(state.videoTime ?? 0, state.updatedAt));
+			case DoujiPlayerStateEnum.Playing:
+				return Promise.resolve(new ClientStatePlaying(state.videoTime ?? 0, state.updatedAt));
+			default:
+				console.log(`Unexpected client state transition from state WAITING to ${state.state}. Ignoring it.`);
 				return Promise.resolve(null);
 		}
 	}

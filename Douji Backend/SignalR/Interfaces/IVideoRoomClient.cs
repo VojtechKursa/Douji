@@ -12,4 +12,5 @@ public interface IVideoRoomClient
 
 	Task PlayVideo(HubUserDTO user, string url);
 	Task UpdateClientState(HubUserStateDTO userState);
+	Task UpdateRoomState(HubRoomStateDTO roomState);
 }

@@ -1,39 +1,40 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { VideoRoomSignalRClient } from "../lib/SignalR/VideoRoomSignalRClient";
-import { YouTubeVideoPlayer } from "../lib/Player/Players/YouTubeVideoPlayer";
-import { doujiPlayerStateToString } from "../lib/Player/PlayerStates/Generic/DoujiPlayerState";
+import { PlayerController } from "../lib/PlayerController";
 
-const videoPlayerId = "player";
-let videoPlayer: YouTubeVideoPlayer | undefined = undefined;
+const playerElementId = "player";
 
-export function VideoPlayer({ client }: { client: VideoRoomSignalRClient | undefined }) {
+export function VideoPlayer({
+	controller,
+	videoPlayerElementId,
+	setVideoPlayerElementId,
+}: {
+	controller: PlayerController | undefined;
+	videoPlayerElementId: string | undefined;
+	setVideoPlayerElementId: (value: string) => void;
+}) {
 	const [currentlyPlayedUrl, setCurrentlyPlayedUrl] = useState<string>();
 
 	useEffect(() => {
-		if (client == undefined) return;
+		if (videoPlayerElementId == undefined || videoPlayerElementId != playerElementId) {
+			setVideoPlayerElementId(playerElementId);
+			return;
+		}
 
-		videoPlayer = new YouTubeVideoPlayer(videoPlayerId);
+		if (controller == undefined) return;
 
-		videoPlayer.onStateUpdate((state) => {
-			console.log(
-				`Player onStateUpdate handler: ${
-					state.external ? "external" : "INTERNAL"
-				} state changed event to state ${doujiPlayerStateToString(state.state)} at video time ${
-					state.videoTime == null ? "null" : Math.round(state.videoTime * 100) / 100
-				}`
-			);
-
-			client.acceptPlayerEvent(state);
-		});
-
-		if (client == undefined) return;
+		const videoPlayer = controller.videoPlayer;
+		const client = controller.client;
 
 		client.onWelcome(async (data) => {
 			console.log(`Received welcome message`, data);
 			if (data.currentlyPlayedURL != null) {
 				await videoPlayer?.loadVideoByUrl(data.currentlyPlayedURL, true);
+			}
+
+			if (data.currentlyPlayedURL != null) {
+				setCurrentlyPlayedUrl(data.currentlyPlayedURL);
 			}
 		});
 
@@ -43,18 +44,12 @@ export function VideoPlayer({ client }: { client: VideoRoomSignalRClient | undef
 
 			await videoPlayer?.loadVideoByUrl(url, true);
 		});
-
-		client.onClientStateUpdate((newState) => {
-			console.log("Received ClientStateUpdate message", newState);
-
-			//await videoPlayer?.setState(videoPlayer.buildState(state, time, true, new Date(date)));
-		});
-	}, [client]);
+	}, [controller, videoPlayerElementId, setVideoPlayerElementId]);
 
 	return (
 		<div>
 			<div>Currently played URL: {currentlyPlayedUrl}</div>
-			<div id={videoPlayerId}></div>
+			<div id={playerElementId}></div>
 		</div>
 	);
 }

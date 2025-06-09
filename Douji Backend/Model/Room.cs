@@ -15,6 +15,8 @@ public class Room(int? id, string name, string? passwordHash)
 
 	public string? CurrentlyPlayedUrl { get; set; } = null;
 
+	public RoomState RoomState { get; set; } = new RoomStateUnstarted(DateTime.UtcNow);
+
 	public List<User> Users { get; } = [];
 
 	public bool HasPassword => PasswordHash != null;

@@ -5,13 +5,14 @@ import { User } from "./Types/User";
 import { IDoujiPlayerState } from "../Player/PlayerStates/Generic/DoujiPlayerState";
 import { ClientState, ClientStateUnstarted } from "./ClientStates/ClientState";
 import { UserState, UserStateDTO } from "./Types/UserState";
-import { RoomState } from "./RoomStates/RoomState";
+import { RoomState, RoomStateDTO, RoomStateEnum } from "./RoomStates/RoomState";
 
 export type ClientStateChangeHandler = (newState: ClientState, previousState: ClientState) => void;
 
 export class VideoRoomSignalRClient {
 	protected readonly connection: HubConnection;
-	protected currentState: ClientState;
+	protected clientState: ClientState;
+	protected roomState: RoomState;
 
 	protected readonly stateChangeHandlers: ClientStateChangeHandler[] = [];
 
@@ -26,29 +27,51 @@ export class VideoRoomSignalRClient {
 			.configureLogging(ClientConfig.devBuild ? LogLevel.Information : LogLevel.Error)
 			.build();
 
-		this.currentState = new ClientStateUnstarted(new Date());
+		this.clientState = new ClientStateUnstarted(new Date());
+		this.roomState = new RoomState(RoomStateEnum.Unstarted, null, new Date());
+
+		this.connection.on("UpdateRoomState", (stateAny) => {
+			const roomState = RoomStateDTO.fromObject(stateAny).toRoomState();
+			this.roomState = roomState;
+		});
 	}
 
 	public async acceptPlayerEvent(state: IDoujiPlayerState): Promise<void> {
-		const newState = await this.currentState.acceptEvent(state);
+		const newState = await this.clientState.acceptEvent(state);
 
 		if (newState != null) {
-			const previousState = this.currentState;
-			this.currentState = newState;
-
-			const updateAnnouncementPromise = this.connection.invoke(
-				"UpdateState",
-				newState.updatedAt.toISOString(),
-				newState.state,
-				newState.videoTime
-			);
-
-			for (const handler of this.stateChangeHandlers) {
-				handler(newState, previousState);
-			}
-
-			await updateAnnouncementPromise;
+			this.setClientState(newState, true, true);
 		}
+	}
+
+	public async setClientState(
+		state: ClientState,
+		announceToServer: boolean = true,
+		triggerEvents: boolean = true
+	): Promise<void> {
+		const previousState = this.clientState;
+		this.clientState = state;
+
+		let serverAnnouncePromise: Promise<void> | null = null;
+		if (announceToServer) {
+			serverAnnouncePromise = this.callUpdateState(state);
+		}
+
+		if (triggerEvents) {
+			for (const handler of this.stateChangeHandlers) {
+				handler(state, previousState);
+			}
+		}
+
+		await serverAnnouncePromise;
+	}
+
+	public getClientState(): ClientState {
+		return this.clientState;
+	}
+
+	public getRoomState(): RoomState {
+		return this.roomState;
 	}
 
 	public onClientStateUpdate(handler: ClientStateChangeHandler): void {
@@ -90,14 +113,24 @@ export class VideoRoomSignalRClient {
 	}
 
 	public onRoomStateUpdate(handler: (roomState: RoomState) => void): void {
-		this.connection.on("UpdateRoomState", handler);
+		this.connection.on("UpdateRoomState", (stateAny) => {
+			handler(RoomStateDTO.fromObject(stateAny).toRoomState());
+		});
 	}
 
 	public onClose(handler: (error?: Error) => void): void {
 		this.connection.onclose(handler);
 	}
 
-	public playVideo(url: string): void {
-		this.connection.invoke("Play", url);
+	public async playVideo(url: string): Promise<void> {
+		await this.callPlayVideo(url);
+	}
+
+	protected async callPlayVideo(url: string): Promise<void> {
+		await this.connection.invoke("Play", url);
+	}
+
+	protected async callUpdateState(state: ClientState): Promise<void> {
+		await this.connection.invoke("UpdateState", state.updatedAt.toISOString(), state.state, state.videoTime);
 	}
 }

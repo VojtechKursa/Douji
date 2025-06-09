@@ -1,4 +1,4 @@
-import { DoujiVideoPlayer } from "../../Players/DoujiVideoPlayer";
+import { DoujiVideoPlayerTyped } from "../../Players/DoujiVideoPlayer";
 
 export interface IDoujiPlayerState {
 	readonly state: DoujiPlayerStateEnum;
@@ -23,7 +23,7 @@ export abstract class DoujiPlayerState<T> implements IDoujiPlayerState {
 		public readonly updatedAt: Date
 	) {}
 
-	abstract acceptEvent(state: T, player: DoujiVideoPlayer<T>): Promise<DoujiPlayerState<T> | null>;
+	abstract acceptEvent(state: T, player: DoujiVideoPlayerTyped<T>): Promise<DoujiPlayerState<T> | null>;
 
 	destroy(): void {}
 
@@ -94,7 +94,7 @@ abstract class DoujiPlayerStateWithStaticTimeCheck<T> extends DoujiPlayerState<T
 		videoTime: number,
 		external: boolean,
 		updatedAt: Date,
-		private readonly player: DoujiVideoPlayer<T>
+		private readonly player: DoujiVideoPlayerTyped<T>
 	) {
 		super(state, videoTime, external, updatedAt);
 
@@ -142,18 +142,18 @@ abstract class DoujiPlayerStateWithStaticTimeCheck<T> extends DoujiPlayerState<T
 		videoTime: number,
 		external: boolean,
 		updatedAt: Date,
-		player: DoujiVideoPlayer<T>
+		player: DoujiVideoPlayerTyped<T>
 	): DoujiPlayerStateWithStaticTimeCheck<T>;
 }
 
 export abstract class DoujiPlayerStatePaused<T> extends DoujiPlayerStateWithStaticTimeCheck<T> {
-	public constructor(videoTime: number, external: boolean, updatedAt: Date, player: DoujiVideoPlayer<T>) {
+	public constructor(videoTime: number, external: boolean, updatedAt: Date, player: DoujiVideoPlayerTyped<T>) {
 		super(DoujiPlayerStateEnum.Paused, videoTime, external, updatedAt, player);
 	}
 }
 
 export abstract class DoujiPlayerStateBuffering<T> extends DoujiPlayerStateWithStaticTimeCheck<T> {
-	public constructor(videoTime: number, external: boolean, updatedAt: Date, player: DoujiVideoPlayer<T>) {
+	public constructor(videoTime: number, external: boolean, updatedAt: Date, player: DoujiVideoPlayerTyped<T>) {
 		super(DoujiPlayerStateEnum.Buffering, videoTime, external, updatedAt, player);
 	}
 }

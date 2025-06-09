@@ -3,6 +3,7 @@ using Douji.Backend.Data;
 using Douji.Backend.Data.Database.Interfaces.DAO;
 using Douji.Backend.Model;
 using Douji.Backend.Model.ClientStates;
+using Douji.Backend.Model.RoomStates;
 using Douji.Backend.SignalR.Data;
 using Douji.Backend.SignalR.Interfaces;
 using Microsoft.AspNetCore.SignalR;
@@ -25,6 +26,7 @@ public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>
 
 		var room = user.Room;
 		room.CurrentlyPlayedUrl = url;
+		room.RoomState = new RoomStateUnstarted(DateTime.UtcNow);
 
 		string group = room.IdNotNull.ToString();
 		await Clients.Group(group).PlayVideo(HubUserDTO.FromUser(user), url);
@@ -55,6 +57,17 @@ public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>
 		};
 
 		await Clients.Group(group).UpdateClientState(HubUserStateDTO.FromUser(user));
+
+		ClientState clientState = new() { State = state, UpdatedAt = updateTime, VideoTime = videoTime };
+
+		RoomState? newRoomState = room.RoomState.AcceptClientStateEvent(clientState, user, room);
+
+		if (newRoomState == null)
+			return;
+
+		room.RoomState = newRoomState;
+
+		await Clients.Group(group).UpdateRoomState(HubRoomStateDTO.FromRoomState(newRoomState));
 	}
 
 	public override async Task OnConnectedAsync()
@@ -91,6 +104,8 @@ public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>
 			return;
 		}
 
+		room.Users.Add(user);
+
 		string groupId = room.IdNotNull.ToString();
 
 		await Clients.Caller.Welcome(new InitialRoomData()
@@ -113,6 +128,8 @@ public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>
 			return;
 
 		var room = user.Room;
+		room.Users.Remove(user);
+
 		string group = room.IdNotNull.ToString();
 
 		await Groups.RemoveFromGroupAsync(Context.ConnectionId, group);

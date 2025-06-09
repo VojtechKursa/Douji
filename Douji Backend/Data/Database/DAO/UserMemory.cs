@@ -36,7 +36,7 @@ public class UserMemory(IDoujiInMemoryDb parentDatabase) : IUserMemory
 		if (roomDictionary == null)
 		{
 			roomDictionary = [];
-			usersById.Add(user.Room, roomDictionary);
+			usersById[user.Room] = roomDictionary;
 		}
 
 		while (true)
@@ -68,11 +68,10 @@ public class UserMemory(IDoujiInMemoryDb parentDatabase) : IUserMemory
 
 		user.Id = idToAssign;
 
-		roomDictionary.Add(idToAssign, user);
-		usersByConnectionId.Add(user.ConnectionId, user);
+		roomDictionary[idToAssign] = user;
+		usersByConnectionId[user.ConnectionId] = user;
 
-		nextIds.Add(user.Room, idToAssign + 1);
-
+		nextIds[user.Room] = idToAssign + 1;
 		return true;
 	}
 

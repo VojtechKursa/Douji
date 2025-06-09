@@ -1,6 +1,7 @@
-import { DoujiPlayerState, DoujiPlayerStateEnum } from "../PlayerStates/Generic/DoujiPlayerState";
+import { DoujiPlayerState, DoujiPlayerStateEnum, IDoujiPlayerState } from "../PlayerStates/Generic/DoujiPlayerState";
 
-export type PlayerStateUpdateHandler<T> = (currentState: DoujiPlayerState<T>) => void;
+export type PlayerStateUpdateHandler = (currentState: IDoujiPlayerState) => void;
+export type PlayerStateUpdateHandlerTyped<T> = (currentState: DoujiPlayerState<T>) => void;
 
 export const enum VideoQuality {
 	Unknown,
@@ -14,7 +15,7 @@ export const enum VideoQuality {
 	Ultra,
 }
 
-export abstract class DoujiVideoPlayer<T> {
+export abstract class DoujiVideoPlayer {
 	public abstract getCurrentVideoTime(): Promise<number | undefined>;
 	public abstract getDuration(): Promise<number | undefined>;
 	public abstract getBufferedTime(): Promise<number | undefined>;
@@ -23,8 +24,8 @@ export abstract class DoujiVideoPlayer<T> {
 	public abstract isPlaying(): Promise<boolean>;
 	public abstract isSupposedToPlay(): Promise<boolean>;
 
-	public abstract loadVideoByUrl(url: string, invokedExternally: boolean, startSeconds: number | undefined): Promise<boolean>;
-	public abstract loadVideoById(id: string, invokedExternally: boolean, startSeconds: number | undefined): Promise<boolean>;
+	public abstract loadVideoByUrl(url: string, invokedExternally: boolean, startSeconds?: number): Promise<boolean>;
+	public abstract loadVideoById(id: string, invokedExternally: boolean, startSeconds?: number): Promise<boolean>;
 
 	public abstract getLoadedVideoUrl(): Promise<string | undefined> | undefined;
 	public abstract getLoadedVideoId(): Promise<string | undefined> | undefined;
@@ -44,17 +45,21 @@ export abstract class DoujiVideoPlayer<T> {
 	public abstract mute(): Promise<boolean>;
 	public abstract unMute(): Promise<boolean>;
 
-	public abstract getState(): DoujiPlayerState<T>;
-	public abstract changeState(newState: DoujiPlayerState<T>): void;
-
-	public abstract setState(newState: DoujiPlayerState<T>): Promise<void>;
+	public abstract getState(): IDoujiPlayerState;
+	public abstract onStateUpdate(handler: PlayerStateUpdateHandler): void;
 
 	public abstract setTime(seconds: number, invokedExternally: boolean, setState: boolean): Promise<boolean>;
 
 	public abstract play(invokedExternally: boolean, setState: boolean): Promise<boolean>;
 	public abstract pause(invokedExternally: boolean, setState: boolean): Promise<boolean>;
+}
 
-	public abstract onStateUpdate(handler: PlayerStateUpdateHandler<T>): void;
+export abstract class DoujiVideoPlayerTyped<T> extends DoujiVideoPlayer {
+	public abstract getStateTyped(): DoujiPlayerState<T>;
+	public abstract changeState(newState: DoujiPlayerState<T>): void;
+	public abstract setState(newState: DoujiPlayerState<T>): Promise<void>;
+
+	public abstract onStateUpdateTyped(handler: PlayerStateUpdateHandlerTyped<T>): void;
 
 	public abstract buildState(
 		state: DoujiPlayerStateEnum,

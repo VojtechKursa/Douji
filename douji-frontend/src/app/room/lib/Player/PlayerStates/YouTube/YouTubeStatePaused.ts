@@ -1,6 +1,6 @@
 import PlayerStates from "youtube-player/dist/constants/PlayerStates";
 import { youTubeStateToString } from "../../Players/YouTubeVideoPlayer";
-import { DoujiVideoPlayer } from "../../Players/DoujiVideoPlayer";
+import { DoujiVideoPlayerTyped } from "../../Players/DoujiVideoPlayer";
 import { DoujiPlayerState, DoujiPlayerStatePaused } from "../Generic/DoujiPlayerState";
 import { YouTubeStateEnded } from "./YouTubeStateEnded";
 import { YouTubeStatePlaying } from "./YouTubeStatePlaying";
@@ -12,7 +12,7 @@ export class YouTubeStatePaused extends DoujiPlayerStatePaused<PlayerStates> {
 
 	public override async acceptEvent(
 		state: PlayerStates,
-		player: DoujiVideoPlayer<PlayerStates>
+		player: DoujiVideoPlayerTyped<PlayerStates>
 	): Promise<DoujiPlayerState<PlayerStates> | null> {
 		const videoTime = await player.getCurrentVideoTime();
 
@@ -67,7 +67,7 @@ export class YouTubeStatePaused extends DoujiPlayerStatePaused<PlayerStates> {
 		videoTime: number,
 		external: boolean,
 		updatedAt: Date,
-		player: DoujiVideoPlayer<PlayerStates>
+		player: DoujiVideoPlayerTyped<PlayerStates>
 	): YouTubeStatePaused {
 		return new YouTubeStatePaused(videoTime, external, updatedAt, player);
 	}

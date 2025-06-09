@@ -1,7 +1,7 @@
 import YTPlayer from "youtube-player";
 import PlayerStates from "youtube-player/dist/constants/PlayerStates";
-import { DoujiPlayerState, DoujiPlayerStateEnum, InvalidStateError } from "../PlayerStates/Generic/DoujiPlayerState";
-import { DoujiVideoPlayer, PlayerStateUpdateHandler, VideoQuality } from "./DoujiVideoPlayer";
+import { DoujiPlayerState, DoujiPlayerStateEnum, IDoujiPlayerState, InvalidStateError } from "../PlayerStates/Generic/DoujiPlayerState";
+import { DoujiVideoPlayerTyped, PlayerStateUpdateHandler, PlayerStateUpdateHandlerTyped, VideoQuality } from "./DoujiVideoPlayer";
 import { YouTubeStateUnstarted } from "../PlayerStates/YouTube/YouTubeStateUnstarted";
 import { YouTubeStateEnded } from "../PlayerStates/YouTube/YouTubeStateEnded";
 import { YouTubeStatePlaying } from "../PlayerStates/YouTube/YouTubeStatePlaying";
@@ -28,14 +28,14 @@ export function youTubeStateToString(state: PlayerStates): string {
 	}
 }
 
-export class YouTubeVideoPlayer extends DoujiVideoPlayer<PlayerStates> {
+export class YouTubeVideoPlayer extends DoujiVideoPlayerTyped<PlayerStates> {
 	//TODO Change to private when abstraction implementation is complete
 	public readonly player: YouTubePlayer;
 
 	private static readonly videoUrlRegex =
 		/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?(?:.+\&)?v=|youtu\.be\/)([a-zA-Z0-9_\-]{11})/i;
 
-	private readonly stateUpdateHandlers: PlayerStateUpdateHandler<PlayerStates>[] = [];
+	private readonly stateUpdateHandlers: PlayerStateUpdateHandlerTyped<PlayerStates>[] = [];
 
 	private readonly lockName: string = "douji_videoPlayer_lock";
 
@@ -67,7 +67,11 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayer<PlayerStates> {
 		});
 	}
 
-	public override getState(): DoujiPlayerState<PlayerStates> {
+	public override getState(): IDoujiPlayerState {
+		return this.currentState;
+	}
+
+	public override getStateTyped(): DoujiPlayerState<PlayerStates> {
 		return this.currentState;
 	}
 
@@ -111,7 +115,11 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayer<PlayerStates> {
 		}
 	}
 
-	public override onStateUpdate(handler: PlayerStateUpdateHandler<PlayerStates>): void {
+	public override onStateUpdate(handler: PlayerStateUpdateHandler): void {
+		this.stateUpdateHandlers.push(handler);
+	}
+
+	public override onStateUpdateTyped(handler: PlayerStateUpdateHandlerTyped<PlayerStates>): void {
 		this.stateUpdateHandlers.push(handler);
 	}
 

@@ -42,14 +42,31 @@ public class RoomMemory(IDoujiInMemoryDb parentDatabase) : IRoomMemory
 		}
 
 		room.Id = nextId;
-		roomsById.Add(nextId, room);
+		roomsById[nextId] = room;
 
 		nextId++;
 
 		return true;
 	}
 
-	public bool Delete(int id) => roomsById.Remove(id);
+	public bool Delete(int id)
+	{
+		if (roomsById.TryGetValue(id, out Room? room))
+		{
+			roomsById.Remove(id);
+
+			foreach (User user in room.Users)
+			{
+				db.Users.Delete(room, user.IdNotNull);
+			}
+
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
 
 	public IEnumerable<Room> List() => roomsById.Values;
 

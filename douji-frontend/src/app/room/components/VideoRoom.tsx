@@ -6,6 +6,8 @@ import { VideoPlayer } from "./VideoPlayer";
 import { VideoRoomSignalRClient } from "../lib/SignalR/VideoRoomSignalRClient";
 import { VideoUrlField } from "./VideoUrlField";
 import { ConnectionParameters } from "@/app/lib/ConnectionParameters";
+import { PlayerController } from "../lib/PlayerController";
+import { YouTubeVideoPlayer } from "../lib/Player/Players/YouTubeVideoPlayer";
 
 function getQueryRoomId(query?: string | URLSearchParams): number | null {
 	const searchParams: URLSearchParams =
@@ -25,7 +27,8 @@ function getQueryRoomId(query?: string | URLSearchParams): number | null {
 }
 
 export function VideoRoom() {
-	const [signalRClient, setSignalRClient] = useState<VideoRoomSignalRClient>();
+	const [playerController, setPlayerController] = useState<PlayerController>();
+	const [videoPlayerElementId, setVideoPlayerElementId] = useState<string>();
 
 	useEffect(() => {
 		const queryRoomId = getQueryRoomId();
@@ -40,9 +43,20 @@ export function VideoRoom() {
 			window.location.href = "/";
 			return;
 		}
+	}, []);
 
+	useEffect(() => {
+		const params = ConnectionParameters.load();
+		if (params == undefined) {
+			window.location.href = "/";
+			return;
+		}
+
+		if (videoPlayerElementId == undefined) return;
+
+		const videoPlayer = new YouTubeVideoPlayer(videoPlayerElementId);
 		const videoRoomClient = new VideoRoomSignalRClient(params.roomId, params.username, params.password);
-		setSignalRClient(videoRoomClient);
+		setPlayerController(new PlayerController(videoPlayer, videoRoomClient));
 
 		videoRoomClient.onForcedDisconnect((reason: string | undefined) => {
 			const reasonText: string = reason == undefined ? "No reason given." : `Reason: ${reason}`;
@@ -61,13 +75,17 @@ export function VideoRoom() {
 		return () => {
 			window.removeEventListener("pagehide", beforeHideHandler);
 		};
-	}, []);
+	}, [videoPlayerElementId]);
 
 	return (
 		<div>
-			<VideoPlayer client={signalRClient} />
-			<ClientList client={signalRClient} />
-			<VideoUrlField client={signalRClient} />
+			<VideoPlayer
+				controller={playerController}
+				videoPlayerElementId={videoPlayerElementId}
+				setVideoPlayerElementId={setVideoPlayerElementId}
+			/>
+			<ClientList client={playerController?.client} />
+			<VideoUrlField client={playerController?.client} />
 		</div>
 	);
 }
