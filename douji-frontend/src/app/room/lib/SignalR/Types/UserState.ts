@@ -6,6 +6,7 @@ import {
 	ClientStatePaused,
 	ClientStatePlaying,
 	ClientStateUnstarted,
+	ClientStateWaiting,
 } from "../ClientStates/ClientState";
 import { User } from "./User";
 
@@ -54,7 +55,8 @@ export class UserStateDTO {
 					state = new ClientStateUnstarted(updatedAt);
 					break;
 				case ClientStateEnum.Waiting:
-					throw new Error("Not implemented");
+					state = new ClientStateWaiting(getVideoTimeOrThrow(this.state), updatedAt);
+					break;
 				default:
 					break;
 			}
