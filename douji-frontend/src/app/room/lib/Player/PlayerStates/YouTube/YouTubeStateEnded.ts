@@ -33,7 +33,7 @@ export class YouTubeStateEnded extends DoujiPlayerStateEnded<PlayerStates> {
 				}
 
 				const videoTime = await player.getCurrentVideoTime();
-				return new YouTubeStateBuffering(videoTime ?? 0, false, new Date(), player);
+				return new YouTubeStateBuffering(videoTime ?? 0, new Date(), player);
 			default:
 				console.log(
 					`Unexpected state transition from state ENDED to ${youTubeStateToString(state)}. Ignoring it.`

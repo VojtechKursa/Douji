@@ -43,20 +43,17 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayerTyped<PlayerStates> {
 
 	private currentState: DoujiPlayerState<PlayerStates>;
 
-	//TODO FIX: These 2 arrays get filled up at the receiving player
-	private externalStateChanges: PlayerStates[] = [];
-	private ignoredNextStates: PlayerStates[] = [];
-
 	public constructor(elementId: string) {
 		super();
 
-		this.currentState = new YouTubeStateUnstarted(false, new Date());
+		this.currentState = new YouTubeStateUnstarted(new Date());
 
 		this.player = YTPlayer(elementId);
 
 		this.player.on("ready", () => {
 			this.player.on("stateChange", async (ev) => {
 				const state: PlayerStates = ev.data as PlayerStates;
+
 				await navigator.locks.request(this.lockName, async () => {
 					const newState = await this.currentState.acceptEvent(state, this);
 					if (newState != null) {
@@ -126,23 +123,25 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayerTyped<PlayerStates> {
 	public override buildState(
 		state: DoujiPlayerStateEnum,
 		videoTime: number | null,
-		external: boolean,
 		updatedAt: Date
 	): DoujiPlayerState<PlayerStates> {
 		switch (state) {
 			case DoujiPlayerStateEnum.Buffering:
-				if (videoTime == null) throw new InvalidStateError("Attempted to build 'Buffering' state without video time");
-				return new YouTubeStateBuffering(videoTime, external, updatedAt, this);
+				if (videoTime == null)
+					throw new InvalidStateError("Attempted to build 'Buffering' state without video time");
+				return new YouTubeStateBuffering(videoTime, updatedAt, this);
 			case DoujiPlayerStateEnum.Playing:
-				if (videoTime == null) throw new InvalidStateError("Attempted to build 'Playing' state without video time");
-				return new YouTubeStatePlaying(videoTime, external, updatedAt);
+				if (videoTime == null)
+					throw new InvalidStateError("Attempted to build 'Playing' state without video time");
+				return new YouTubeStatePlaying(videoTime, updatedAt);
 			case DoujiPlayerStateEnum.Paused:
-				if (videoTime == null) throw new InvalidStateError("Attempted to build 'Paused' state without video time");
-				return new YouTubeStatePaused(videoTime, external, updatedAt, this);
+				if (videoTime == null)
+					throw new InvalidStateError("Attempted to build 'Paused' state without video time");
+				return new YouTubeStatePaused(videoTime, updatedAt, this);
 			case DoujiPlayerStateEnum.Ended:
-				return new YouTubeStateEnded(external, updatedAt);
+				return new YouTubeStateEnded(updatedAt);
 			case DoujiPlayerStateEnum.Unstarted:
-				return new YouTubeStateUnstarted(external, updatedAt);
+				return new YouTubeStateUnstarted(updatedAt);
 		}
 	}
 
@@ -216,26 +215,18 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayerTyped<PlayerStates> {
 		}
 	}
 
-	public override async loadVideoByUrl(
-		url: string,
-		invokedExternally: boolean,
-		startSeconds?: number
-	): Promise<boolean> {
+	public override async loadVideoByUrl(url: string, startSeconds?: number): Promise<boolean> {
 		const match = url.match(YouTubeVideoPlayer.videoUrlRegex);
 
 		if (match == null) return false;
 
-		await this.loadVideoById(match[1], invokedExternally, startSeconds);
+		await this.loadVideoById(match[1], startSeconds);
 		return true;
 	}
 
-	public override async loadVideoById(
-		videoId: string,
-		invokedExternally: boolean,
-		startSeconds?: number
-	): Promise<boolean> {
+	public override async loadVideoById(videoId: string, startSeconds?: number): Promise<boolean> {
 		try {
-			this.changeState(new YouTubeStateUnstarted(invokedExternally, new Date()));
+			this.changeState(new YouTubeStateUnstarted(new Date()));
 
 			await this.player.loadVideoById(videoId, startSeconds ?? 0);
 			return true;

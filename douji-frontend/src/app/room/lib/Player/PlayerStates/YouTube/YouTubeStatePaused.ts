@@ -18,7 +18,7 @@ export class YouTubeStatePaused extends DoujiPlayerStatePaused<PlayerStates> {
 
 		switch (state) {
 			case PlayerStates.ENDED:
-				return new YouTubeStateEnded(false, new Date());
+				return new YouTubeStateEnded(new Date());
 			case PlayerStates.BUFFERING:
 				// Wait for BUFFERING -> PLAYING transition or announce BUFFERING when it takes too long
 
@@ -26,7 +26,6 @@ export class YouTubeStatePaused extends DoujiPlayerStatePaused<PlayerStates> {
 					player.changeState(
 						new YouTubeStateBuffering(
 							videoTime ?? 0,
-							false,
 							new Date(Date.now() - this.playingTransitionTimeLimitMs),
 							player
 						)
@@ -42,9 +41,9 @@ export class YouTubeStatePaused extends DoujiPlayerStatePaused<PlayerStates> {
 				this.destroy();
 
 				if (state == PlayerStates.PLAYING) {
-					return new YouTubeStatePlaying(videoTime ?? 0, false, new Date());
+					return new YouTubeStatePlaying(videoTime ?? 0, new Date());
 				} else {
-					return new YouTubeStatePaused(videoTime ?? 0, false, new Date(), player);
+					return new YouTubeStatePaused(videoTime ?? 0, new Date(), player);
 				}
 			default:
 				console.log(
@@ -65,10 +64,9 @@ export class YouTubeStatePaused extends DoujiPlayerStatePaused<PlayerStates> {
 
 	protected override buildUpdatedState(
 		videoTime: number,
-		external: boolean,
 		updatedAt: Date,
 		player: DoujiVideoPlayerTyped<PlayerStates>
 	): YouTubeStatePaused {
-		return new YouTubeStatePaused(videoTime, external, updatedAt, player);
+		return new YouTubeStatePaused(videoTime, updatedAt, player);
 	}
 }

@@ -9,23 +9,33 @@ export class PlayerController {
 	private readonly allowedPausedDifferenceSeconds: number = 0.1;
 	private readonly bufferedTimeThresholdSeconds: number = 1;
 
-	public constructor(
-		public readonly videoPlayer: DoujiVideoPlayer,
-		public readonly client: VideoRoomSignalRClient
-	) {
+	private ignoreNextState: DoujiPlayerStateEnum | null = null;
+
+	public constructor(public readonly videoPlayer: DoujiVideoPlayer, public readonly client: VideoRoomSignalRClient) {
 		videoPlayer.onStateUpdate(async (state) => {
 			console.log(
-				`Player onStateUpdate handler: ${
-					state.external ? "external" : "INTERNAL"
-				} state changed event to state ${doujiPlayerStateToString(state.state)} at video time ${
-					state.videoTime == null ? "null" : Math.round(state.videoTime * 100) / 100
-				}`
+				`Player onStateUpdate handler: state changed event to state ${doujiPlayerStateToString(
+					state.state
+				)} at video time ${state.videoTime == null ? "null" : Math.round(state.videoTime * 100) / 100}`
 			);
+
+			if (this.ignoreNextState != null) {
+				if (state.state != this.ignoreNextState) {
+					console.warn(
+						`${doujiPlayerStateToString(
+							this.ignoreNextState
+						)} event expected, but arrived event is ${doujiPlayerStateToString(state.state)}.`
+					);
+				}
+				this.ignoreNextState = null;
+				return;
+			}
 
 			const roomState = client.getRoomState();
 
 			if (state.state == DoujiPlayerStateEnum.Playing && roomState.state == RoomStateEnum.Waiting) {
-				await videoPlayer.pause(true, false);
+				this.ignoreNextState = DoujiPlayerStateEnum.Paused;
+				await videoPlayer.pause();
 
 				const videoTime = await this.videoPlayer.getCurrentVideoTime();
 				if (videoTime == undefined) {
@@ -41,7 +51,7 @@ export class PlayerController {
 		client.onRoomStateUpdate(async (state) => {
 			switch (state.state) {
 				case RoomStateEnum.Ended:
-					this.videoPlayer.setTime(Number.MAX_SAFE_INTEGER, true, true);
+					await this.videoPlayer.setTime(Number.MAX_SAFE_INTEGER);
 					break;
 				case RoomStateEnum.Playing:
 				case RoomStateEnum.Paused: {
@@ -78,14 +88,16 @@ export class PlayerController {
 
 					if (setState) {
 						if (state.state == RoomStateEnum.Playing) {
-							this.videoPlayer.play(true, !setTime);
+							await this.videoPlayer.play();
 						} else if (state.state == RoomStateEnum.Paused) {
-							this.videoPlayer.pause(true, !setTime);
+							await this.videoPlayer.pause();
 						}
 					}
+
 					if (setTime) {
-						this.videoPlayer.setTime(expectedTime, true, true);
+						await this.videoPlayer.setTime(expectedTime);
 					}
+
 					break;
 				}
 				case RoomStateEnum.Waiting: {
@@ -94,7 +106,7 @@ export class PlayerController {
 					}
 					const videoState = this.videoPlayer.getState();
 					if (videoState.state == DoujiPlayerStateEnum.Unstarted) {
-						await this.videoPlayer.play(true, true);
+						await this.videoPlayer.play();
 					}
 
 					let [duration, buffered, videoTime] = await Promise.all([
@@ -110,9 +122,10 @@ export class PlayerController {
 						buffered >= this.bufferedTimeThresholdSeconds ||
 						(duration <= this.bufferedTimeThresholdSeconds && buffered >= duration)
 					) {
-						await this.videoPlayer.pause(true, false);
-						await this.videoPlayer.setTime(state.videoTime, true, false);
-						this.client.setClientState(new ClientStateWaiting(state.videoTime, new Date()));
+						this.ignoreNextState = DoujiPlayerStateEnum.Paused;
+						await this.videoPlayer.pause();
+						await this.videoPlayer.setTime(state.videoTime);
+						await this.client.setClientState(new ClientStateWaiting(state.videoTime, new Date()));
 					}
 					break;
 				}

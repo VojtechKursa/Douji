@@ -30,7 +30,7 @@ export function VideoPlayer({
 		client.onWelcome(async (data) => {
 			console.log(`Received welcome message`, data);
 			if (data.currentlyPlayedURL != null) {
-				await videoPlayer?.loadVideoByUrl(data.currentlyPlayedURL, true);
+				await videoPlayer?.loadVideoByUrl(data.currentlyPlayedURL);
 			}
 
 			if (data.currentlyPlayedURL != null) {
@@ -42,7 +42,7 @@ export function VideoPlayer({
 			console.log(`Received PlayVideo message: ${url}`);
 			setCurrentlyPlayedUrl(url);
 
-			await videoPlayer?.loadVideoByUrl(url, true);
+			await videoPlayer?.loadVideoByUrl(url);
 		});
 	}, [controller, videoPlayerElementId, setVideoPlayerElementId]);
 

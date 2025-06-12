@@ -21,7 +21,7 @@ export class YouTubeStatePlaying extends DoujiPlayerStatePlaying<PlayerStates> {
 	): Promise<DoujiPlayerState<PlayerStates> | null> {
 		switch (state) {
 			case PlayerStates.ENDED:
-				return new YouTubeStateEnded(false, new Date());
+				return new YouTubeStateEnded(new Date());
 
 			case PlayerStates.BUFFERING:
 				if (this.inPauseTransition) {
@@ -33,14 +33,14 @@ export class YouTubeStatePlaying extends DoujiPlayerStatePlaying<PlayerStates> {
 				const videoTime = await player.getCurrentVideoTime();
 
 				if (((await player.getBufferedTime()) ?? 0) < this.bufferThresholdSeconds) {
-					return new YouTubeStateBuffering(videoTime ?? 0, false, new Date(), player);
+					return new YouTubeStateBuffering(videoTime ?? 0, new Date(), player);
 				} else {
 					this.inBufferingTransition = true;
 					const timerStart = new Date();
 
 					setTimeout(() => {
 						if (!this.inBufferingTransition) return;
-						player.changeState(new YouTubeStateBuffering(videoTime ?? 0, false, timerStart, player));
+						player.changeState(new YouTubeStateBuffering(videoTime ?? 0, timerStart, player));
 					}, this.bufferingTimeoutMs);
 
 					return null;
@@ -53,7 +53,7 @@ export class YouTubeStatePlaying extends DoujiPlayerStatePlaying<PlayerStates> {
 					this.inBufferingTransition = false;
 					this.destroyLocalTimer();
 
-					return new YouTubeStatePaused((await player.getCurrentVideoTime()) ?? 0, false, new Date(), player);
+					return new YouTubeStatePaused((await player.getCurrentVideoTime()) ?? 0, new Date(), player);
 				} else {
 					this.inPauseTransition = true;
 					const timerStart = new Date();
@@ -61,7 +61,7 @@ export class YouTubeStatePlaying extends DoujiPlayerStatePlaying<PlayerStates> {
 					setTimeout(async () => {
 						if (!this.inPauseTransition) return;
 						player.changeState(
-							new YouTubeStatePaused((await player.getCurrentVideoTime()) ?? 0, false, timerStart, player)
+							new YouTubeStatePaused((await player.getCurrentVideoTime()) ?? 0, timerStart, player)
 						);
 					}, this.pauseTimeoutMs);
 
@@ -83,7 +83,7 @@ export class YouTubeStatePlaying extends DoujiPlayerStatePlaying<PlayerStates> {
 					this.destroyLocalTimer();
 				}
 
-				return new YouTubeStatePlaying((await player.getCurrentVideoTime()) ?? 0, false, new Date());
+				return new YouTubeStatePlaying((await player.getCurrentVideoTime()) ?? 0, new Date());
 
 			default:
 				console.log(

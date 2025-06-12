@@ -3,7 +3,6 @@ import { DoujiVideoPlayerTyped } from "../../Players/DoujiVideoPlayer";
 export interface IDoujiPlayerState {
 	readonly state: DoujiPlayerStateEnum;
 	readonly videoTime: number | null;
-	readonly external: boolean;
 	readonly updatedAt: Date;
 
 	getSupposedCurrentTime(): number | null;
@@ -19,11 +18,13 @@ export abstract class DoujiPlayerState<T> implements IDoujiPlayerState {
 	public constructor(
 		public readonly state: DoujiPlayerStateEnum,
 		public readonly videoTime: number | null,
-		public readonly external: boolean,
 		public readonly updatedAt: Date
 	) {}
 
-	abstract acceptEvent(state: T, player: DoujiVideoPlayerTyped<T>): Promise<DoujiPlayerState<T> | null>;
+	abstract acceptEvent(
+		state: T,
+		player: DoujiVideoPlayerTyped<T>
+	): Promise<DoujiPlayerState<T> | null>;
 
 	destroy(): void {}
 
@@ -64,20 +65,20 @@ export function doujiPlayerStateToString(state: DoujiPlayerStateEnum): string {
 }
 
 export abstract class DoujiPlayerStateUnstarted<T> extends DoujiPlayerState<T> {
-	public constructor(external: boolean, updatedAt: Date) {
-		super(DoujiPlayerStateEnum.Unstarted, null, external, updatedAt);
+	public constructor(updatedAt: Date) {
+		super(DoujiPlayerStateEnum.Unstarted, null, updatedAt);
 	}
 }
 
 export abstract class DoujiPlayerStatePlaying<T> extends DoujiPlayerState<T> {
-	public constructor(videoTime: number, external: boolean, updatedAt: Date) {
-		super(DoujiPlayerStateEnum.Playing, videoTime, external, updatedAt);
+	public constructor(videoTime: number, updatedAt: Date) {
+		super(DoujiPlayerStateEnum.Playing, videoTime, updatedAt);
 	}
 }
 
 export abstract class DoujiPlayerStateEnded<T> extends DoujiPlayerState<T> {
-	public constructor(external: boolean, updatedAt: Date) {
-		super(DoujiPlayerStateEnum.Ended, null, external, updatedAt);
+	public constructor(updatedAt: Date) {
+		super(DoujiPlayerStateEnum.Ended, null, updatedAt);
 	}
 }
 
@@ -92,11 +93,10 @@ abstract class DoujiPlayerStateWithStaticTimeCheck<T> extends DoujiPlayerState<T
 	public constructor(
 		state: DoujiPlayerStateEnum,
 		videoTime: number,
-		external: boolean,
 		updatedAt: Date,
 		private readonly player: DoujiVideoPlayerTyped<T>
 	) {
-		super(state, videoTime, external, updatedAt);
+		super(state, videoTime, updatedAt);
 
 		this.timeAtLastCheck = videoTime;
 		this.timeLastCheckedAt = updatedAt;
@@ -125,10 +125,12 @@ abstract class DoujiPlayerStateWithStaticTimeCheck<T> extends DoujiPlayerState<T
 
 			if (Math.abs(difference) > this.timeCheckToleranceSeconds) {
 				console.log(
-					`Difference discovered by ${doujiPlayerStateToString(this.state)} video time scanner. Current: ${currentTime}. At last check: ${this.timeAtLastCheck}.`
+					`Difference discovered by ${doujiPlayerStateToString(
+						this.state
+					)} video time scanner. Current: ${currentTime}. At last check: ${this.timeAtLastCheck}.`
 				);
 
-				const newState = this.buildUpdatedState(currentTime, false, now, this.player);
+				const newState = this.buildUpdatedState(currentTime, now, this.player);
 
 				this.player.changeState(newState);
 			}
@@ -140,20 +142,19 @@ abstract class DoujiPlayerStateWithStaticTimeCheck<T> extends DoujiPlayerState<T
 
 	protected abstract buildUpdatedState(
 		videoTime: number,
-		external: boolean,
 		updatedAt: Date,
 		player: DoujiVideoPlayerTyped<T>
 	): DoujiPlayerStateWithStaticTimeCheck<T>;
 }
 
 export abstract class DoujiPlayerStatePaused<T> extends DoujiPlayerStateWithStaticTimeCheck<T> {
-	public constructor(videoTime: number, external: boolean, updatedAt: Date, player: DoujiVideoPlayerTyped<T>) {
-		super(DoujiPlayerStateEnum.Paused, videoTime, external, updatedAt, player);
+	public constructor(videoTime: number, updatedAt: Date, player: DoujiVideoPlayerTyped<T>) {
+		super(DoujiPlayerStateEnum.Paused, videoTime, updatedAt, player);
 	}
 }
 
 export abstract class DoujiPlayerStateBuffering<T> extends DoujiPlayerStateWithStaticTimeCheck<T> {
-	public constructor(videoTime: number, external: boolean, updatedAt: Date, player: DoujiVideoPlayerTyped<T>) {
-		super(DoujiPlayerStateEnum.Buffering, videoTime, external, updatedAt, player);
+	public constructor(videoTime: number, updatedAt: Date, player: DoujiVideoPlayerTyped<T>) {
+		super(DoujiPlayerStateEnum.Buffering, videoTime, updatedAt, player);
 	}
 }

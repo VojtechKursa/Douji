@@ -24,8 +24,8 @@ export abstract class DoujiVideoPlayer {
 	public abstract isPlaying(): Promise<boolean>;
 	public abstract isSupposedToPlay(): Promise<boolean>;
 
-	public abstract loadVideoByUrl(url: string, invokedExternally: boolean, startSeconds?: number): Promise<boolean>;
-	public abstract loadVideoById(id: string, invokedExternally: boolean, startSeconds?: number): Promise<boolean>;
+	public abstract loadVideoByUrl(url: string, startSeconds?: number): Promise<boolean>;
+	public abstract loadVideoById(id: string, startSeconds?: number): Promise<boolean>;
 
 	public abstract getLoadedVideoUrl(): Promise<string | undefined> | undefined;
 	public abstract getLoadedVideoId(): Promise<string | undefined> | undefined;
@@ -48,10 +48,10 @@ export abstract class DoujiVideoPlayer {
 	public abstract getState(): IDoujiPlayerState;
 	public abstract onStateUpdate(handler: PlayerStateUpdateHandler): void;
 
-	public abstract setTime(seconds: number, invokedExternally: boolean, setState: boolean): Promise<boolean>;
+	public abstract setTime(seconds: number): Promise<boolean>;
 
-	public abstract play(invokedExternally: boolean, setState: boolean): Promise<boolean>;
-	public abstract pause(invokedExternally: boolean, setState: boolean): Promise<boolean>;
+	public abstract play(): Promise<boolean>;
+	public abstract pause(): Promise<boolean>;
 }
 
 export abstract class DoujiVideoPlayerTyped<T> extends DoujiVideoPlayer {
@@ -64,7 +64,6 @@ export abstract class DoujiVideoPlayerTyped<T> extends DoujiVideoPlayer {
 	public abstract buildState(
 		state: DoujiPlayerStateEnum,
 		videoTime: number | null,
-		external: boolean,
 		updatedAt: Date
 	): DoujiPlayerState<T>;
 }
