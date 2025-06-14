@@ -98,6 +98,12 @@ public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>
 		}
 
 		User user = new(null, room, auth.username, Context.ConnectionId);
+		if (!user.IsValid())
+		{
+			await ForcedDisconnect("Invalid username");
+			return;
+		}
+
 		if (!db.Users.Create(user))
 		{
 			await ForcedDisconnect("Invalid or duplicate username");

@@ -1,11 +1,12 @@
 ﻿using Douji.Backend.Data;
 using Douji.Backend.Data.Api.Room;
 using Douji.Backend.Exceptions;
+using Douji.Backend.Model.Interfaces;
 using Douji.Backend.Model.RoomStates;
 
 namespace Douji.Backend.Model;
 
-public class Room(int? id, string name, string? passwordHash)
+public class Room(int? id, string name, string? passwordHash) : IValidatable
 {
 	public int? Id { get; set; } = id;
 
@@ -24,8 +25,13 @@ public class Room(int? id, string name, string? passwordHash)
 
 
 
-	public void Update(RoomApiUpdateRequest newRoom)
+	public bool Update(RoomApiUpdateRequest newRoom)
 	{
+		if (string.IsNullOrEmpty(newRoom.Name))
+		{
+			return false;
+		}
+
 		Name = newRoom.Name;
 
 		if (newRoom.RemovePassword)
@@ -36,6 +42,8 @@ public class Room(int? id, string name, string? passwordHash)
 		{
 			PasswordHash = Hash.ToHex(Hash.Digest(newRoom.NewPassword));
 		}
+
+		return true;
 	}
 
 	public static Room FromApiRequest(RoomApiCreateRequest request)
@@ -44,4 +52,6 @@ public class Room(int? id, string name, string? passwordHash)
 
 		return new Room(null, request.Name, passwordHash);
 	}
+
+	public bool IsValid() => !string.IsNullOrEmpty(Name);
 }

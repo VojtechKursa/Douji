@@ -1,9 +1,10 @@
 ﻿using Douji.Backend.Exceptions;
 using Douji.Backend.Model.ClientStates;
+using Douji.Backend.Model.Interfaces;
 
 namespace Douji.Backend.Model;
 
-public class User
+public class User : IValidatable
 {
 	public int? Id { get; set; }
 
@@ -40,4 +41,6 @@ public class User
 			ClientState = clientState;
 		}
 	}
+
+	public bool IsValid() => !(string.IsNullOrEmpty(ConnectionId) || string.IsNullOrEmpty(Name));
 }

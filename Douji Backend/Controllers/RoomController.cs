@@ -26,6 +26,10 @@ public class RoomController(IDoujiInMemoryDb database) : Controller
 	public IActionResult Create(RoomApiCreateRequest request)
 	{
 		var newRoom = Room.FromApiRequest(request);
+		if (!newRoom.IsValid())
+		{
+			return BadRequest();
+		}
 
 		if (db.Rooms.Create(newRoom))
 		{
@@ -44,9 +48,9 @@ public class RoomController(IDoujiInMemoryDb database) : Controller
 
 		if (room == null) return NotFound();
 
-		room.Update(update);
+		bool updateSuccess = room.Update(update);
 
-		return Ok(RoomApiResponse.FromRoom(room));
+		return updateSuccess ? Ok(RoomApiResponse.FromRoom(room)) : BadRequest();
 	}
 
 	[HttpDelete("{id}")]
