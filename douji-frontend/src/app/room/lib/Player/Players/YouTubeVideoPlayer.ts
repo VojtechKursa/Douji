@@ -1,7 +1,17 @@
 import YTPlayer from "youtube-player";
 import PlayerStates from "youtube-player/dist/constants/PlayerStates";
-import { DoujiPlayerState, DoujiPlayerStateEnum, IDoujiPlayerState, InvalidStateError } from "../PlayerStates/Generic/DoujiPlayerState";
-import { DoujiVideoPlayerTyped, PlayerStateUpdateHandler, PlayerStateUpdateHandlerTyped, VideoQuality } from "./DoujiVideoPlayer";
+import {
+	DoujiPlayerState,
+	DoujiPlayerStateEnum,
+	IDoujiPlayerState,
+	InvalidStateError,
+} from "../PlayerStates/Generic/DoujiPlayerState";
+import {
+	DoujiVideoPlayerTyped,
+	PlayerStateUpdateHandler,
+	PlayerStateUpdateHandlerTyped,
+	VideoQuality,
+} from "./DoujiVideoPlayer";
 import { YouTubeStateUnstarted } from "../PlayerStates/YouTube/YouTubeStateUnstarted";
 import { YouTubeStateEnded } from "../PlayerStates/YouTube/YouTubeStateEnded";
 import { YouTubeStatePlaying } from "../PlayerStates/YouTube/YouTubeStatePlaying";
@@ -91,9 +101,7 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayerTyped<PlayerStates> {
 		}
 
 		if (currentState == undefined || currentState != newState.state) {
-			const playingState = newState.state == DoujiPlayerStateEnum.Playing;
-
-			if (playingState) {
+			if (newState.state == DoujiPlayerStateEnum.Playing) {
 				await this.play();
 			} else {
 				await this.pause();
@@ -199,6 +207,7 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayerTyped<PlayerStates> {
 
 		try {
 			await this.player.pauseVideo();
+			console.log("Set player to PAUSE");
 			return true;
 		} catch {
 			return false;
@@ -210,6 +219,7 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayerTyped<PlayerStates> {
 
 		try {
 			await this.player.playVideo();
+			console.log("Set player to PLAY");
 			return true;
 		} catch {
 			return false;

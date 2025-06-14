@@ -93,6 +93,8 @@ export class PlayerController {
 		});
 
 		client.onRoomStateUpdate(async (state) => {
+			console.log("Room state changed to", state);
+
 			switch (state.state) {
 				case RoomStateEnum.Ended:
 					await this.videoPlayer.setTime(Number.MAX_SAFE_INTEGER);
