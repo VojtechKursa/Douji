@@ -32,6 +32,9 @@ public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>, IRoomHu
 		await Clients.Group(group).PlayVideo(HubUserDTO.FromUser(user), url);
 	}
 
+	public Task<string> GetTime(string requestedAt) =>
+		Task.FromResult(DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+
 	public async Task UpdateState(string updatedAt, ClientStateEnum state, double? videoTime)
 	{
 		var user = GetUser(Context.ConnectionId);

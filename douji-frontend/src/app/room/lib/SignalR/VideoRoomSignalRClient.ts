@@ -6,6 +6,7 @@ import { IDoujiPlayerState } from "../Player/PlayerStates/Generic/DoujiPlayerSta
 import { ClientState, ClientStateUnstarted } from "./ClientStates/ClientState";
 import { UserState, UserStateDTO } from "./Types/UserState";
 import { RoomState, RoomStateDTO, RoomStateEnum } from "./RoomStates/RoomState";
+import { TimeProvider } from "@/app/lib/TimeProvider";
 
 export type ClientStateChangeHandler = (newState: ClientState, previousState: ClientState) => void;
 
@@ -27,8 +28,8 @@ export class VideoRoomSignalRClient {
 			.configureLogging(ClientConfig.devBuild ? LogLevel.Information : LogLevel.Error)
 			.build();
 
-		this.clientState = new ClientStateUnstarted(new Date());
-		this.roomState = new RoomState(RoomStateEnum.Unstarted, null, new Date());
+		this.clientState = new ClientStateUnstarted(TimeProvider.getTime());
+		this.roomState = new RoomState(RoomStateEnum.Unstarted, null, new Date(0));
 
 		this.connection.on("UpdateRoomState", (stateAny) => {
 			const roomState = RoomStateDTO.fromObject(stateAny).toRoomState();
@@ -124,6 +125,19 @@ export class VideoRoomSignalRClient {
 
 	public async playVideo(url: string): Promise<void> {
 		await this.callPlayVideo(url);
+	}
+
+	public async requestServerTimeOffsetMs(): Promise<number> {
+		const requestedAt = new Date();
+		const requestResult = await this.connection.invoke("GetTime", requestedAt.toISOString());
+		const arrivedAt = Date.now();
+
+		const serverTime = new Date(requestResult);
+
+		const tripTime = (arrivedAt - requestedAt.getTime()) / 2;
+		const currentServerTime = serverTime.getTime() + tripTime + (Date.now() - arrivedAt);
+
+		return currentServerTime - Date.now();
 	}
 
 	protected async callPlayVideo(url: string): Promise<void> {

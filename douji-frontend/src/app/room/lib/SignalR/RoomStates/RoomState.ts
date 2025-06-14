@@ -1,3 +1,5 @@
+import { TimeProvider } from "@/app/lib/TimeProvider";
+
 export const enum RoomStateEnum {
 	Unstarted = 0,
 	Playing = 1,
@@ -17,7 +19,7 @@ export class RoomState {
 		if (this.videoTime == null)
 			return null;
 
-		return ((Date.now() - this.updatedAt.getTime()) / 1000) + this.videoTime;
+		return ((TimeProvider.now() - this.updatedAt.getTime()) / 1000) + this.videoTime;
 	}
 }
 

@@ -1,4 +1,4 @@
-﻿using Douji.Backend.Model.ClientStates;
+using Douji.Backend.Model.ClientStates;
 using Douji.Backend.SignalR.Data;
 
 namespace Douji.Backend.SignalR.Interfaces;
@@ -11,4 +11,5 @@ public interface IRoomHub
 {
 	Task Play(string url);
 	Task UpdateState(string updatedAt, ClientStateEnum state, double? videoTime);
+	Task<string> GetTime(string requestedAt);
 }

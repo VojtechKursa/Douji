@@ -4,6 +4,7 @@ import { DoujiPlayerState, DoujiPlayerStateUnstarted } from "../Generic/DoujiPla
 import { YouTubeStateBuffering } from "./YouTubeStateBuffering";
 import { DoujiVideoPlayerTyped } from "../../Players/DoujiVideoPlayer";
 import { YouTubeStateEnded } from "./YouTubeStateEnded";
+import { TimeProvider } from "@/app/lib/TimeProvider";
 
 export class YouTubeStateUnstarted extends DoujiPlayerStateUnstarted<PlayerStates> {
 	public override async acceptEvent(
@@ -15,9 +16,9 @@ export class YouTubeStateUnstarted extends DoujiPlayerStateUnstarted<PlayerState
 			case PlayerStates.UNSTARTED:
 				return null;
 			case PlayerStates.BUFFERING:
-				return new YouTubeStateBuffering((await player.getCurrentVideoTime()) ?? 0, new Date(), player);
+				return new YouTubeStateBuffering((await player.getCurrentVideoTime()) ?? 0, TimeProvider.getTime(), player);
 			case PlayerStates.ENDED:
-				return new YouTubeStateEnded(new Date());
+				return new YouTubeStateEnded(TimeProvider.getTime());
 			default:
 				console.log(
 					`Unexpected state transition from state UNSTARTED to ${youTubeStateToString(state)}. Ignoring it.`

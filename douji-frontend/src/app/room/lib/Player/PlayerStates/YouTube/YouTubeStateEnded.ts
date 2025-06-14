@@ -3,6 +3,7 @@ import { youTubeStateToString } from "../../Players/YouTubeVideoPlayer";
 import { DoujiPlayerState, DoujiPlayerStateEnded } from "../Generic/DoujiPlayerState";
 import { DoujiVideoPlayerTyped } from "../../Players/DoujiVideoPlayer";
 import { YouTubeStateBuffering } from "./YouTubeStateBuffering";
+import { TimeProvider } from "@/app/lib/TimeProvider";
 
 export class YouTubeStateEnded extends DoujiPlayerStateEnded<PlayerStates> {
 	private readonly capturedStates: PlayerStates[] = [];
@@ -33,7 +34,7 @@ export class YouTubeStateEnded extends DoujiPlayerStateEnded<PlayerStates> {
 				}
 
 				const videoTime = await player.getCurrentVideoTime();
-				return new YouTubeStateBuffering(videoTime ?? 0, new Date(), player);
+				return new YouTubeStateBuffering(videoTime ?? 0, TimeProvider.getTime(), player);
 			default:
 				console.log(
 					`Unexpected state transition from state ENDED to ${youTubeStateToString(state)}. Ignoring it.`

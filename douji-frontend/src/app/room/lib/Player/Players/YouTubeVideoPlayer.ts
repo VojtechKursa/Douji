@@ -8,6 +8,7 @@ import { YouTubeStatePlaying } from "../PlayerStates/YouTube/YouTubeStatePlaying
 import { YouTubeStateBuffering } from "../PlayerStates/YouTube/YouTubeStateBuffering";
 import { YouTubeStatePaused } from "../PlayerStates/YouTube/YouTubeStatePaused";
 import { YouTubePlayer } from "youtube-player/dist/types";
+import { TimeProvider } from "@/app/lib/TimeProvider";
 
 export function youTubeStateToString(state: PlayerStates): string {
 	switch (state) {
@@ -46,7 +47,7 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayerTyped<PlayerStates> {
 	public constructor(elementId: string) {
 		super();
 
-		this.currentState = new YouTubeStateUnstarted(new Date());
+		this.currentState = new YouTubeStateUnstarted(TimeProvider.getTime());
 
 		this.player = YTPlayer(elementId);
 
@@ -220,13 +221,12 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayerTyped<PlayerStates> {
 
 		if (match == null) return false;
 
-		await this.loadVideoById(match[1], startSeconds);
-		return true;
+		return await this.loadVideoById(match[1], startSeconds);
 	}
 
 	public override async loadVideoById(videoId: string, startSeconds?: number): Promise<boolean> {
 		try {
-			this.changeState(new YouTubeStateUnstarted(new Date()));
+			this.changeState(new YouTubeStateUnstarted(TimeProvider.getTime()));
 
 			await this.player.loadVideoById(videoId, startSeconds ?? 0);
 			return true;

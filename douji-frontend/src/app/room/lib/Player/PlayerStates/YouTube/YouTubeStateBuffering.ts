@@ -5,6 +5,7 @@ import { DoujiVideoPlayerTyped } from "../../Players/DoujiVideoPlayer";
 import { YouTubeStatePaused } from "./YouTubeStatePaused";
 import { YouTubeStateEnded } from "./YouTubeStateEnded";
 import { YouTubeStatePlaying } from "./YouTubeStatePlaying";
+import { TimeProvider } from "@/app/lib/TimeProvider";
 
 export class YouTubeStateBuffering extends DoujiPlayerStateBuffering<PlayerStates> {
 	public override async acceptEvent(
@@ -16,12 +17,12 @@ export class YouTubeStateBuffering extends DoujiPlayerStateBuffering<PlayerState
 			case PlayerStates.PLAYING:
 				const videoTime = await player.getCurrentVideoTime();
 				if (state == PlayerStates.PAUSED) {
-					return new YouTubeStatePaused(videoTime ?? 0, new Date(), player);
+					return new YouTubeStatePaused(videoTime ?? 0, TimeProvider.getTime(), player);
 				} else {
-					return new YouTubeStatePlaying(videoTime ?? 0, new Date());
+					return new YouTubeStatePlaying(videoTime ?? 0, TimeProvider.getTime());
 				}
 			case PlayerStates.ENDED:
-				return new YouTubeStateEnded(new Date());
+				return new YouTubeStateEnded(TimeProvider.getTime());
 			default:
 				console.log(
 					`Unexpected state transition from state BUFFERING to ${youTubeStateToString(state)}. Ignoring it.`

@@ -1,3 +1,4 @@
+import { TimeProvider } from "@/app/lib/TimeProvider";
 import { DoujiVideoPlayerTyped } from "../../Players/DoujiVideoPlayer";
 
 export interface IDoujiPlayerState {
@@ -32,7 +33,7 @@ export abstract class DoujiPlayerState<T> implements IDoujiPlayerState {
 		if (this.videoTime == null) return null;
 
 		if (this.state == DoujiPlayerStateEnum.Playing) {
-			return (Date.now() - this.updatedAt.getTime()) / 1000 + this.videoTime;
+			return (TimeProvider.now() - this.updatedAt.getTime()) / 1000 + this.videoTime;
 		} else {
 			return this.videoTime;
 		}
@@ -115,7 +116,7 @@ abstract class DoujiPlayerStateWithStaticTimeCheck<T> extends DoujiPlayerState<T
 		// In case the tick happened before the interval was cleared in state change
 		if (this.timeCheckIntervalId == null) return;
 
-		const now = new Date();
+		const now = TimeProvider.getTime();
 		const currentTime = await this.player.getCurrentVideoTime();
 
 		if (currentTime == undefined) return;

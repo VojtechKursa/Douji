@@ -1,3 +1,4 @@
+import { TimeProvider } from "@/app/lib/TimeProvider";
 import { DoujiVideoPlayer } from "./Player/Players/DoujiVideoPlayer";
 import { DoujiPlayerStateEnum, doujiPlayerStateToString } from "./Player/PlayerStates/Generic/DoujiPlayerState";
 import { ClientStateWaiting } from "./SignalR/ClientStates/ClientState";
@@ -42,9 +43,9 @@ export class PlayerController {
 					throw new Error("Video time undefined in playing state update.");
 				}
 
-				await client.setClientState(new ClientStateWaiting(videoTime, new Date()));
+				await this.client.setClientState(new ClientStateWaiting(videoTime, TimeProvider.getTime()));
 			} else {
-				await client.acceptPlayerEvent(state);
+				await this.client.acceptPlayerEvent(state);
 			}
 		});
 
@@ -125,12 +126,28 @@ export class PlayerController {
 						this.ignoreNextState = DoujiPlayerStateEnum.Paused;
 						await this.videoPlayer.pause();
 						await this.videoPlayer.setTime(state.videoTime);
-						await this.client.setClientState(new ClientStateWaiting(state.videoTime, new Date()));
+						await this.client.setClientState(
+							new ClientStateWaiting(state.videoTime, TimeProvider.getTime())
+						);
 					}
 					break;
 				}
 				default:
 					break;
+			}
+		});
+
+		client.onWelcome(async (data) => {
+			console.log(`Received welcome message`, data);
+			this.welcomeData = data;
+
+			TimeProvider.offsetMs = await client.requestServerTimeOffsetMs();
+			console.log(`Time offset is ${TimeProvider.offsetMs} ms`);
+
+			if (data.currentlyPlayedURL != null) {
+				await videoPlayer.loadVideoByUrl(data.currentlyPlayedURL);
+			} else {
+				this.synchronizing = false;
 			}
 		});
 	}
