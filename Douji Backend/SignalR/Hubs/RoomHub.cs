@@ -1,3 +1,4 @@
+﻿using System.Diagnostics;
 using System.Globalization;
 using Douji.Backend.Data;
 using Douji.Backend.Data.Database.Interfaces.DAO;
@@ -115,11 +116,18 @@ public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>, IRoomHu
 
 		room.Users.Add(user);
 
+		if (room.RoomState is RoomStateWaiting rs)
+		{
+			int id = user.Id ?? throw new UnreachableException();
+			rs.BufferingUserIDs.Add(id);
+		}
+
 		string groupId = room.IdNotNull.ToString();
 
 		await Clients.Caller.Welcome(new InitialRoomData()
 		{
 			UserStates = [.. room.Users.Select(HubUserStateDTO.FromUser)],
+			RoomState = HubRoomStateDTO.FromRoomState(room.RoomState),
 			CurrentlyPlayedURL = room.CurrentlyPlayedUrl
 		});
 

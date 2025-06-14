@@ -1,6 +1,6 @@
 import ClientConfig from "@/app/lib/ClientConfig";
 import { HubConnection, HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
-import { WelcomeData } from "./Types/WelcomeData";
+import { WelcomeData, WelcomeDataDTO, welcomeDataDtoParse } from "./Types/WelcomeData";
 import { User } from "./Types/User";
 import { IDoujiPlayerState } from "../Player/PlayerStates/Generic/DoujiPlayerState";
 import { ClientState, ClientStateUnstarted } from "./ClientStates/ClientState";
@@ -88,7 +88,9 @@ export class VideoRoomSignalRClient {
 	}
 
 	public onWelcome(handler: (data: WelcomeData) => void): void {
-		this.connection.on("Welcome", handler);
+		this.connection.on("Welcome", (data: WelcomeDataDTO) => {
+			handler(welcomeDataDtoParse(data));
+		});
 	}
 
 	public onPlayVideo(handler: (user: User, url: string) => void) {

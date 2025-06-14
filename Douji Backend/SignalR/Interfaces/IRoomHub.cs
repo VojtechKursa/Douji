@@ -1,4 +1,4 @@
-using Douji.Backend.Model.ClientStates;
+﻿using Douji.Backend.Model.ClientStates;
 using Douji.Backend.SignalR.Data;
 
 namespace Douji.Backend.SignalR.Interfaces;

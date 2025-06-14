@@ -28,11 +28,6 @@ export function VideoPlayer({
 		const client = controller.client;
 
 		client.onWelcome(async (data) => {
-			console.log(`Received welcome message`, data);
-			if (data.currentlyPlayedURL != null) {
-				await videoPlayer?.loadVideoByUrl(data.currentlyPlayedURL);
-			}
-
 			if (data.currentlyPlayedURL != null) {
 				setCurrentlyPlayedUrl(data.currentlyPlayedURL);
 			}

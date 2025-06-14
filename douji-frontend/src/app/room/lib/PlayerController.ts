@@ -1,24 +1,38 @@
 import { TimeProvider } from "@/app/lib/TimeProvider";
 import { DoujiVideoPlayer } from "./Player/Players/DoujiVideoPlayer";
-import { DoujiPlayerStateEnum, doujiPlayerStateToString } from "./Player/PlayerStates/Generic/DoujiPlayerState";
-import { ClientStateWaiting } from "./SignalR/ClientStates/ClientState";
-import { RoomStateEnum } from "./SignalR/RoomStates/RoomState";
+import {
+	DoujiPlayerStateEnum,
+	doujiPlayerStateToString,
+	IDoujiPlayerState,
+} from "./Player/PlayerStates/Generic/DoujiPlayerState";
+import {
+	ClientState,
+	ClientStateBuffering,
+	ClientStateEnded,
+	ClientStatePaused,
+	ClientStatePlaying,
+	ClientStateUnstarted,
+	ClientStateWaiting,
+} from "./SignalR/ClientStates/ClientState";
+import { RoomState, RoomStateEnum } from "./SignalR/RoomStates/RoomState";
 import { VideoRoomSignalRClient } from "./SignalR/VideoRoomSignalRClient";
+import { WelcomeData } from "./SignalR/Types/WelcomeData";
+import { UnreachableError } from "@/app/lib/Errors/UnreachableError";
 
 export class PlayerController {
 	private readonly allowedPlayingDifferenceSeconds: number = 1;
 	private readonly allowedPausedDifferenceSeconds: number = 0.1;
 	private readonly bufferedTimeThresholdSeconds: number = 1;
 
+	private readonly waitAnnounceDelayMs: number = 500;
+
+	private synchronizing: boolean = true;
 	private ignoreNextState: DoujiPlayerStateEnum | null = null;
+	private welcomeData: WelcomeData | null = null;
 
 	public constructor(public readonly videoPlayer: DoujiVideoPlayer, public readonly client: VideoRoomSignalRClient) {
 		videoPlayer.onStateUpdate(async (state) => {
-			console.log(
-				`Player onStateUpdate handler: state changed event to state ${doujiPlayerStateToString(
-					state.state
-				)} at video time ${state.videoTime == null ? "null" : Math.round(state.videoTime * 100) / 100}`
-			);
+			console.log(`Player state changed to ${doujiPlayerStateToString(state.state)}`);
 
 			if (this.ignoreNextState != null) {
 				if (state.state != this.ignoreNextState) {
@@ -27,14 +41,41 @@ export class PlayerController {
 							this.ignoreNextState
 						)} event expected, but arrived event is ${doujiPlayerStateToString(state.state)}.`
 					);
+				} else {
+					console.log(`Ignored state (${doujiPlayerStateToString(state.state)}) arrived.`);
 				}
 				this.ignoreNextState = null;
 				return;
 			}
 
-			const roomState = client.getRoomState();
+			if (this.welcomeData == null) return;
+
+			let roomState: RoomState;
+			{
+				const clientRoomState = client.getRoomState();
+				if (clientRoomState.updatedAt.getTime() == 0) {
+					roomState = this.welcomeData.roomState;
+				} else {
+					roomState = clientRoomState;
+				}
+			}
+
+			if (this.synchronizing) {
+				const clientState = await this.synchronizationStateUpdateHandle(state, roomState);
+
+				if (this.synchronizing) {
+					return;
+				} else {
+					if (clientState != null) {
+						await this.client.setClientState(clientState);
+						return;
+					}
+				}
+			}
 
 			if (state.state == DoujiPlayerStateEnum.Playing && roomState.state == RoomStateEnum.Waiting) {
+				console.log("Playing state arrived while room is waiting, switching own state to waiting.");
+
 				this.ignoreNextState = DoujiPlayerStateEnum.Paused;
 				await videoPlayer.pause();
 
@@ -150,5 +191,109 @@ export class PlayerController {
 				this.synchronizing = false;
 			}
 		});
+	}
+
+	/**
+	 * This function updates {@link PlayerController.synchronizing} variable to indicate, whether the player is still synchronizing.
+	 * If this function returns a not-null {@link ClientState}, it should be set to current state of the client and exit.
+	 */
+	private async synchronizationStateUpdateHandle(
+		state: IDoujiPlayerState,
+		roomState: RoomState
+	): Promise<ClientState | null> {
+		if (!this.synchronizing) return null;
+
+		console.log("State is still synchronizing");
+
+		switch (roomState.state) {
+			case RoomStateEnum.Unstarted:
+				this.synchronizing = false;
+				break;
+			case RoomStateEnum.Ended:
+				if (state.state == DoujiPlayerStateEnum.Unstarted) {
+					await this.videoPlayer.play();
+				} else if (state.state == DoujiPlayerStateEnum.Ended) {
+					this.synchronizing = false;
+				} else {
+					await this.videoPlayer.setTime(Number.MAX_SAFE_INTEGER);
+				}
+				break;
+			case RoomStateEnum.Playing:
+			case RoomStateEnum.Paused:
+			case RoomStateEnum.Waiting:
+				switch (state.state) {
+					case DoujiPlayerStateEnum.Unstarted:
+						await this.videoPlayer.play();
+						break;
+					case DoujiPlayerStateEnum.Ended:
+						const expectedTime = roomState.getCurrentExpectedTime();
+						if (expectedTime == null) throw new UnreachableError();
+						await this.videoPlayer.setTime(expectedTime);
+						break;
+					case DoujiPlayerStateEnum.Buffering:
+					case DoujiPlayerStateEnum.Paused:
+					case DoujiPlayerStateEnum.Playing:
+						if (roomState.state == RoomStateEnum.Paused && state.state != DoujiPlayerStateEnum.Paused) {
+							await this.videoPlayer.pause();
+						} else if (
+							(roomState.state == RoomStateEnum.Playing || roomState.state == RoomStateEnum.Waiting) &&
+							state.state != DoujiPlayerStateEnum.Playing &&
+							state.state != DoujiPlayerStateEnum.Buffering
+						) {
+							await this.videoPlayer.play();
+						} else {
+							const currentTime = await this.videoPlayer.getCurrentVideoTime();
+							const expectedTime = roomState.getCurrentExpectedTime();
+							if (expectedTime == null || currentTime == undefined) throw new UnreachableError();
+
+							if (
+								Math.abs(currentTime - expectedTime) >
+								(roomState.state == RoomStateEnum.Paused
+									? this.allowedPausedDifferenceSeconds
+									: this.allowedPlayingDifferenceSeconds)
+							) {
+								await this.videoPlayer.setTime(expectedTime);
+							} else {
+								this.synchronizing = false;
+							}
+						}
+						break;
+				}
+				break;
+		}
+
+		if (!this.synchronizing) {
+			console.log("Synchronization finished");
+			const videoTime = await this.videoPlayer.getCurrentVideoTime();
+			let clientState: ClientState | null = null;
+
+			switch (state.state) {
+				case DoujiPlayerStateEnum.Unstarted:
+					clientState = new ClientStateUnstarted(TimeProvider.getTime());
+					break;
+				case DoujiPlayerStateEnum.Ended:
+					clientState = new ClientStateEnded(TimeProvider.getTime());
+					break;
+				case DoujiPlayerStateEnum.Paused:
+					if (videoTime == undefined) throw new UnreachableError();
+					clientState = new ClientStatePaused(videoTime, TimeProvider.getTime());
+					break;
+				case DoujiPlayerStateEnum.Buffering:
+					if (videoTime == undefined) throw new UnreachableError();
+					clientState = new ClientStateBuffering(videoTime, TimeProvider.getTime());
+					break;
+				case DoujiPlayerStateEnum.Playing:
+					if (videoTime == undefined) throw new UnreachableError();
+
+					if (roomState.state == RoomStateEnum.Playing) {
+						clientState = new ClientStatePlaying(videoTime, TimeProvider.getTime());
+					}
+					break;
+			}
+
+			return clientState;
+		} else {
+			return null;
+		}
 	}
 }
