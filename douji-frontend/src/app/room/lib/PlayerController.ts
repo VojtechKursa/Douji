@@ -84,7 +84,9 @@ export class PlayerController {
 					throw new Error("Video time undefined in playing state update.");
 				}
 
-				await this.client.setClientState(new ClientStateWaiting(videoTime, TimeProvider.getTime()));
+				setTimeout(async () => {
+					await this.client.setClientState(new ClientStateWaiting(videoTime, TimeProvider.getTime()));
+				}, this.waitAnnounceDelayMs);
 			} else {
 				await this.client.acceptPlayerEvent(state);
 			}
