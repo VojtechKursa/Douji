@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Douji.Backend.SignalR.Hubs;
 
-public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>
+public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>, IRoomHub
 {
 	private readonly IDoujiInMemoryDb db = database;
 
