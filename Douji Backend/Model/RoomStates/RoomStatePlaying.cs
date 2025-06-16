@@ -30,5 +30,5 @@ public class RoomStatePlaying(double videoTime, DateTime updatedAt)
 		};
 	}
 
-	public override double GetCurrentExpectedTime() => (DateTime.UtcNow - UpdatedAt).TotalMilliseconds + VideoTimeGuaranteed;
+	public override double GetCurrentExpectedTime() => (DateTime.UtcNow - UpdatedAt).TotalSeconds + VideoTimeGuaranteed;
 }
