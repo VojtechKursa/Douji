@@ -31,7 +31,7 @@ export class PlayerController {
 	private welcomeData: WelcomeData | null = null;
 
 	public constructor(public readonly videoPlayer: DoujiVideoPlayer, public readonly client: VideoRoomSignalRClient) {
-		videoPlayer.onStateUpdate(async (state) => {
+		this.videoPlayer.onStateUpdate(async (state) => {
 			console.log(`Player state changed to ${doujiPlayerStateToString(state.state)}`);
 
 			if (this.ignoreNextState != null) {
@@ -52,7 +52,7 @@ export class PlayerController {
 
 			let roomState: RoomState;
 			{
-				const clientRoomState = client.getRoomState();
+				const clientRoomState = this.client.getRoomState();
 				if (clientRoomState.updatedAt.getTime() == 0) {
 					roomState = this.welcomeData.roomState;
 				} else {
@@ -92,7 +92,7 @@ export class PlayerController {
 			}
 		});
 
-		client.onRoomStateUpdate(async (state) => {
+		this.client.onRoomStateUpdate(async (state) => {
 			console.log("Room state changed to", state);
 
 			switch (state.state) {
@@ -182,7 +182,7 @@ export class PlayerController {
 			}
 		});
 
-		client.onWelcome(async (data) => {
+		this.client.onWelcome(async (data) => {
 			console.log(`Received welcome message`, data);
 			this.welcomeData = data;
 
@@ -190,7 +190,7 @@ export class PlayerController {
 			console.log(`Time offset is ${TimeProvider.offsetMs} ms`);
 
 			if (data.currentlyPlayedURL != null) {
-				await videoPlayer.loadVideoByUrl(data.currentlyPlayedURL);
+				await this.videoPlayer.loadVideoByUrl(data.currentlyPlayedURL);
 			} else {
 				this.synchronizing = false;
 			}
