@@ -20,6 +20,20 @@ import { YouTubeStatePaused } from "../PlayerStates/YouTube/YouTubeStatePaused";
 import { YouTubePlayer } from "youtube-player/dist/types";
 import { TimeProvider } from "@/app/lib/TimeProvider";
 
+enum RepeatableAction {
+	Pause,
+	Play,
+}
+
+function repeatableActionToString(action: RepeatableAction): string {
+	switch (action) {
+		case RepeatableAction.Pause:
+			return "PAUSE";
+		case RepeatableAction.Play:
+			return "PLAY";
+	}
+}
+
 export function youTubeStateToString(state: PlayerStates): string {
 	switch (state) {
 		case PlayerStates.UNSTARTED:
@@ -52,6 +66,10 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayerTyped<PlayerStates> {
 
 	private readonly timeChangeToleranceSeconds: number = 0.5;
 
+	private currentRepeatableAction: RepeatableAction | null = null;
+	private readonly repeatableActionRetryPeriodMs: number = 1000;
+	private repeatableActionRetryTimeoutId: number | NodeJS.Timeout | null = null;
+
 	private currentState: DoujiPlayerState<PlayerStates>;
 
 	public constructor(elementId: string) {
@@ -66,6 +84,33 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayerTyped<PlayerStates> {
 				const state: PlayerStates = ev.data as PlayerStates;
 
 				await navigator.locks.request(this.lockName, async () => {
+					if (this.currentRepeatableAction != null) {
+						if (
+							(this.currentRepeatableAction == RepeatableAction.Play &&
+								(state == PlayerStates.BUFFERING || state == PlayerStates.PLAYING)) ||
+							(this.currentRepeatableAction == RepeatableAction.Pause && state == PlayerStates.PAUSED)
+						) {
+							if (this.repeatableActionRetryTimeoutId != null) {
+								clearTimeout(this.repeatableActionRetryTimeoutId);
+								this.repeatableActionRetryTimeoutId = null;
+							}
+
+							console.log(
+								`Repeatable action ${repeatableActionToString(this.currentRepeatableAction)} delivered.`
+							);
+
+							this.currentRepeatableAction = null;
+						} else {
+							console.warn(
+								`Unexpected state change to state ${youTubeStateToString(
+									state
+								)} when waiting for ${repeatableActionToString(
+									this.currentRepeatableAction
+								)} repeatable state.`
+							);
+						}
+					}
+
 					const newState = await this.currentState.acceptEvent(state, this);
 					if (newState != null) {
 						this.changeState(newState);
@@ -205,25 +250,64 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayerTyped<PlayerStates> {
 	public override async pause(): Promise<boolean> {
 		if (!(await this.isVideoLoaded())) return false;
 
-		try {
-			await this.player.pauseVideo();
+		if (await this.isSupposedToPlay()) {
+			this.currentRepeatableAction = RepeatableAction.Pause;
+
+			try {
+				await this.player.pauseVideo();
+			} catch {
+				return false;
+			}
+
+			this.repeatableActionRetryTimeoutId = setTimeout(
+				this.repeatableStateRetryHandler,
+				this.repeatableActionRetryPeriodMs
+			);
 			console.log("Set player to PAUSE");
-			return true;
-		} catch {
-			return false;
 		}
+
+		return true;
 	}
 
 	public override async play(): Promise<boolean> {
 		if (!(await this.isVideoLoaded())) return false;
 
-		try {
-			await this.player.playVideo();
+		if (!(await this.isSupposedToPlay())) {
+			this.currentRepeatableAction = RepeatableAction.Play;
+
+			try {
+				await this.player.playVideo();
+			} catch {
+				return false;
+			}
+
+			this.repeatableActionRetryTimeoutId = setTimeout(
+				this.repeatableStateRetryHandler,
+				this.repeatableActionRetryPeriodMs
+			);
 			console.log("Set player to PLAY");
-			return true;
-		} catch {
-			return false;
 		}
+
+		return true;
+	}
+
+	private async repeatableStateRetryHandler(): Promise<void> {
+		await navigator.locks.request(this.lockName, async () => {
+			if (this.currentRepeatableAction != null) {
+				console.log(
+					`Missed repeatable action ${repeatableActionToString(this.currentRepeatableAction)}, retrying.`
+				);
+
+				switch (this.currentRepeatableAction) {
+					case RepeatableAction.Pause:
+						await this.pause();
+						break;
+					case RepeatableAction.Play:
+						await this.play();
+						break;
+				}
+			}
+		});
 	}
 
 	public override async loadVideoByUrl(url: string, startSeconds?: number): Promise<boolean> {
