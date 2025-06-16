@@ -195,6 +195,11 @@ export class PlayerController {
 				this.synchronizing = false;
 			}
 		});
+
+		this.client.onPlayVideo(async (_, url) => {
+			this.client.setClientState(new ClientStateUnstarted(TimeProvider.getTime()));
+			await this.videoPlayer.loadVideoByUrl(url);
+		});
 	}
 
 	/**

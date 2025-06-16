@@ -24,7 +24,6 @@ export function VideoPlayer({
 
 		if (controller == undefined) return;
 
-		const videoPlayer = controller.videoPlayer;
 		const client = controller.client;
 
 		client.onWelcome(async (data) => {
@@ -36,8 +35,6 @@ export function VideoPlayer({
 		client.onPlayVideo(async (_, url) => {
 			console.log(`Received PlayVideo message: ${url}`);
 			setCurrentlyPlayedUrl(url);
-
-			await videoPlayer?.loadVideoByUrl(url);
 		});
 	}, [controller, videoPlayerElementId, setVideoPlayerElementId]);
 
