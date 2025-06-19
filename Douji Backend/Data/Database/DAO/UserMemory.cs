@@ -38,6 +38,11 @@ public class UserMemory(IDoujiInMemoryDb parentDatabase) : IUserMemory
 			roomDictionary = [];
 			usersById[user.Room] = roomDictionary;
 		}
+		else if (roomDictionary.Any((kvp) => kvp.Value.Name == user.Name))
+		{
+			// If room dictionary contains user with duplicit name
+			return false;
+		}
 
 		while (true)
 		{
