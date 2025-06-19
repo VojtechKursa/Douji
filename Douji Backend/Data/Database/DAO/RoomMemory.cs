@@ -8,10 +8,14 @@ public class RoomMemory(IDoujiInMemoryDb parentDatabase) : IRoomMemory
 	protected readonly IDoujiInMemoryDb db = parentDatabase;
 
 	private readonly Dictionary<int, Room> roomsById = [];
+	private readonly Dictionary<string, Room> roomsByName = [];
 	private int nextId = 1;
 
 	public bool Create(Room room)
 	{
+		if (roomsByName.ContainsKey(room.Name))
+			return false;
+
 		int start = nextId - 1;
 
 		while (true)
@@ -43,6 +47,7 @@ public class RoomMemory(IDoujiInMemoryDb parentDatabase) : IRoomMemory
 
 		room.Id = nextId;
 		roomsById[nextId] = room;
+		roomsByName[room.Name] = room;
 
 		nextId++;
 
