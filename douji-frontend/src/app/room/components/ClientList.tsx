@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { VideoRoomSignalRClient } from "../lib/SignalR/VideoRoomSignalRClient";
 import { UserState } from "../lib/SignalR/Types/UserState";
+import { ClientStateUnstarted } from "../lib/SignalR/ClientStates/ClientState";
+import { TimeProvider } from "@/app/lib/TimeProvider";
 
 export function ClientListEntry({ userState }: { userState: UserState }) {
 	let stateString = "";
@@ -32,7 +34,11 @@ export function ClientList({ client }: { client: VideoRoomSignalRClient | undefi
 
 		client.onWelcome((initialData) => setUsers(initialData.userStates.sort(userCompare)));
 
-		client.onUserJoined((user) => setUsers((users) => [...users, new UserState(user)].sort(userCompare)));
+		client.onUserJoined((user) =>
+			setUsers((users) =>
+				[...users, new UserState(user, new ClientStateUnstarted(TimeProvider.getTime()))].sort(userCompare)
+			)
+		);
 
 		client.onUserLeft((user) =>
 			setUsers((users) => {
