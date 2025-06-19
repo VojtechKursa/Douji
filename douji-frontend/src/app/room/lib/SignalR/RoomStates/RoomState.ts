@@ -16,10 +16,13 @@ export class RoomState {
 	) {}
 
 	public getCurrentExpectedTime(): number | null {
-		if (this.videoTime == null)
-			return null;
+		if (this.videoTime == null) return null;
 
-		return ((TimeProvider.now() - this.updatedAt.getTime()) / 1000) + this.videoTime;
+		if (this.state == RoomStateEnum.Playing) {
+			return (TimeProvider.now() - this.updatedAt.getTime()) / 1000 + this.videoTime;
+		} else {
+			return this.videoTime;
+		}
 	}
 }
 
