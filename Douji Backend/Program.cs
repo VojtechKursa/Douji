@@ -16,6 +16,12 @@ namespace Douji.Backend
 
 			MiddlewareConfiguration.ConfigureMiddleware(app);
 
+			string[] listenUrls = app.Configuration.GetSection("BackendUrls").Get<string[]>() ?? [];
+			foreach (string url in listenUrls)
+			{
+				app.Urls.Add(url);
+			}
+
 			app.Run();
 		}
 
@@ -46,16 +52,21 @@ namespace Douji.Backend
 
 			private static void AddSecurityServices(WebApplicationBuilder builder)
 			{
-				builder.Services.AddCors(options =>
+				string[] frontendUrls = builder.Configuration.GetSection("FrontendUrls").Get<string[]>() ?? [];
+
+				if (frontendUrls.Length > 0)
 				{
-					options.AddDefaultPolicy(policy =>
+					builder.Services.AddCors(options =>
 					{
-						policy.WithOrigins("http://localhost:3000");
-						policy.WithMethods("GET", "POST", "PUT", "DELETE");
-						policy.AllowCredentials();
-						policy.AllowAnyHeader();
+						options.AddDefaultPolicy(policy =>
+						{
+							policy.WithOrigins(frontendUrls);
+							policy.WithMethods("GET", "POST", "PUT", "DELETE");
+							policy.AllowCredentials();
+							policy.AllowAnyHeader();
+						});
 					});
-				});
+				}
 			}
 
 			private static void AddSwagger(WebApplicationBuilder builder)
