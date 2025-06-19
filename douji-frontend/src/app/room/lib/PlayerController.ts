@@ -164,6 +164,15 @@ export class PlayerController {
 					buffered ??= 0;
 					videoTime ??= videoState.state == DoujiPlayerStateEnum.Ended ? duration : 0;
 
+					/*
+						Buffering at the beginning of the video must be handled separately,
+					 	because YT player returns duration 0 in that case,
+					 	leading to incorrect readiness state evaluation.
+					*/
+					if (duration == 0 && videoState.state == DoujiPlayerStateEnum.Buffering) {
+						break;
+					}
+
 					if (
 						buffered >= this.bufferedTimeThresholdSeconds ||
 						(duration <= this.bufferedTimeThresholdSeconds && buffered >= duration)
@@ -177,8 +186,6 @@ export class PlayerController {
 					}
 					break;
 				}
-				default:
-					break;
 			}
 		});
 
@@ -199,6 +206,8 @@ export class PlayerController {
 		this.client.onPlayVideo(async (_, url) => {
 			this.client.setClientState(new ClientStateUnstarted(TimeProvider.getTime()));
 			await this.videoPlayer.loadVideoByUrl(url);
+
+			setTimeout(async () => await this.videoPlayer.play(), 1000);
 		});
 	}
 
@@ -235,9 +244,19 @@ export class PlayerController {
 						await this.videoPlayer.play();
 						break;
 					case DoujiPlayerStateEnum.Ended:
+						const duration = await this.videoPlayer.getDuration();
+						if (duration == undefined) break;
+
 						const expectedTime = roomState.getCurrentExpectedTime();
 						if (expectedTime == null) throw new UnreachableError();
-						await this.videoPlayer.setTime(expectedTime);
+
+						if (expectedTime < duration) {
+							await this.videoPlayer.setTime(expectedTime);
+							await this.videoPlayer.play();
+						} else {
+							this.synchronizing = false;
+						}
+
 						break;
 					case DoujiPlayerStateEnum.Buffering:
 					case DoujiPlayerStateEnum.Paused:

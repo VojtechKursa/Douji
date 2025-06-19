@@ -48,6 +48,10 @@ export class ClientStateEnded extends ClientState {
 		switch (state.state) {
 			case DoujiPlayerStateEnum.Buffering:
 				return Promise.resolve(new ClientStateBuffering(state.videoTime ?? 0, state.updatedAt));
+			case DoujiPlayerStateEnum.Paused:
+				return Promise.resolve(new ClientStatePaused(state.videoTime ?? 0, state.updatedAt));
+			case DoujiPlayerStateEnum.Playing:
+				return Promise.resolve(new ClientStatePlaying(state.videoTime ?? 0, state.updatedAt));
 			default:
 				console.log(`Unexpected client state transition from state ENDED to ${state.state}. Ignoring it.`);
 				return Promise.resolve(null);

@@ -233,6 +233,7 @@ export class YouTubeVideoPlayer extends DoujiVideoPlayerTyped<PlayerStates> {
 
 	public override async isVideoLoaded(): Promise<boolean> {
 		const videoUrl = await this.player.getVideoUrl();
+		if (videoUrl == undefined) return false;
 
 		return videoUrl.length > 0;
 	}

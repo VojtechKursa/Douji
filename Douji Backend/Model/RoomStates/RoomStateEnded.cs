@@ -9,6 +9,8 @@ public class RoomStateEnded(DateTime updatedAt)
 	{
 		return clientState.State switch
 		{
+			ClientStateEnum.Paused => new RoomStatePaused(clientState.VideoTimeGuaranteed, clientState.UpdatedAt),
+			ClientStateEnum.Playing => new RoomStatePlaying(clientState.VideoTimeGuaranteed, clientState.UpdatedAt),
 			ClientStateEnum.Buffering => new RoomStateWaiting(clientState.VideoTimeGuaranteed, clientState.UpdatedAt, room.Users),
 			_ => null,
 		};

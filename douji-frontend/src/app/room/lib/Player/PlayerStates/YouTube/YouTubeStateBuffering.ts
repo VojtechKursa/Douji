@@ -6,12 +6,20 @@ import { YouTubeStatePaused } from "./YouTubeStatePaused";
 import { YouTubeStateEnded } from "./YouTubeStateEnded";
 import { YouTubeStatePlaying } from "./YouTubeStatePlaying";
 import { TimeProvider } from "@/app/lib/TimeProvider";
+import { YouTubeStateUnstarted } from "./YouTubeStateUnstarted";
 
 export class YouTubeStateBuffering extends DoujiPlayerStateBuffering<PlayerStates> {
+	private unstartedTransitionFilterTimeoutId: number | NodeJS.Timeout | null = null;
+
 	public override async acceptEvent(
 		state: PlayerStates,
 		player: DoujiVideoPlayerTyped<PlayerStates>
 	): Promise<DoujiPlayerState<PlayerStates> | null> {
+		if (this.unstartedTransitionFilterTimeoutId != null) {
+			clearTimeout(this.unstartedTransitionFilterTimeoutId);
+			this.unstartedTransitionFilterTimeoutId = null;
+		}
+
 		switch (state) {
 			case PlayerStates.PAUSED:
 			case PlayerStates.PLAYING:
@@ -23,6 +31,16 @@ export class YouTubeStateBuffering extends DoujiPlayerStateBuffering<PlayerState
 				}
 			case PlayerStates.ENDED:
 				return new YouTubeStateEnded(TimeProvider.getTime());
+			case PlayerStates.UNSTARTED:
+				// Buffering -> Unstarted can happen during initial load right before transition to Playing
+				console.log("BUFFERING -> UNSTARTED transition caught");
+
+				this.unstartedTransitionFilterTimeoutId = setTimeout(
+					() => player.setState(new YouTubeStateUnstarted(TimeProvider.getTime())),
+					1000
+				);
+
+				return null;
 			default:
 				console.log(
 					`Unexpected state transition from state BUFFERING to ${youTubeStateToString(state)}. Ignoring it.`

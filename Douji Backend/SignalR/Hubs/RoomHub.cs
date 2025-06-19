@@ -119,7 +119,7 @@ public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>, IRoomHu
 		if (room.RoomState is RoomStateWaiting rs)
 		{
 			int id = user.Id ?? throw new UnreachableException();
-			rs.BufferingUserIDs.Add(id);
+			rs.AddBufferingUserId(id);
 		}
 
 		string groupId = room.IdNotNull.ToString();
@@ -151,9 +151,28 @@ public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>, IRoomHu
 
 		await Groups.RemoveFromGroupAsync(Context.ConnectionId, group);
 
-		db.Users.Delete(room, user.IdNotNull);
+		int userId = user.IdNotNull;
+		db.Users.Delete(room, userId);
 
 		await Clients.Group(group).UserLeft(HubUserDTO.FromUser(user));
+
+		if (room.Users.Count <= 0)
+		{
+			if (room.RoomState is RoomStateWithTime state)
+			{
+				room.RoomState = new RoomStatePaused(state.GetCurrentExpectedTime(), DateTime.UtcNow);
+			}
+		}
+		else if (room.RoomState is RoomStateWaiting state)
+		{
+			var newState = state.RemoveBufferingUserId(user.IdNotNull);
+
+			if (newState != null)
+			{
+				room.RoomState = newState;
+				await Clients.Group(group).UpdateRoomState(HubRoomStateDTO.FromRoomState(room.RoomState));
+			}
+		}
 	}
 
 	private User? GetUser(string connectionId) => db.Users.Get(connectionId);
