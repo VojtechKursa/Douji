@@ -78,14 +78,22 @@ export function VideoRoom() {
 	}, [videoPlayerElementId]);
 
 	return (
-		<div>
-			<VideoPlayer
-				controller={playerController}
-				videoPlayerElementId={videoPlayerElementId}
-				setVideoPlayerElementId={setVideoPlayerElementId}
-			/>
-			<ClientList client={playerController?.client} />
-			<VideoUrlField client={playerController?.client} />
+		<div className="d-flex flex-column flex-md-row">
+			<div className="w-100 flex-md-grow-1">
+				<div>
+					<VideoPlayer
+						controller={playerController}
+						videoPlayerElementId={videoPlayerElementId}
+						setVideoPlayerElementId={setVideoPlayerElementId}
+					/>
+				</div>
+				<div>
+					<VideoUrlField client={playerController?.client} />
+				</div>
+			</div>
+			<div className="ps-md-3">
+				<ClientList client={playerController?.client} />
+			</div>
 		</div>
 	);
 }

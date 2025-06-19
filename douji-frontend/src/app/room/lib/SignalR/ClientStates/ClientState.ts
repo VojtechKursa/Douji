@@ -9,6 +9,23 @@ export const enum ClientStateEnum {
 	Ended = 5,
 }
 
+export function clientStateToString(state: ClientStateEnum): string {
+	switch (state) {
+		case ClientStateEnum.Unstarted:
+			return "Unstarted";
+		case ClientStateEnum.Buffering:
+			return "Buffering";
+		case ClientStateEnum.Playing:
+			return "Playing";
+		case ClientStateEnum.Paused:
+			return "Paused";
+		case ClientStateEnum.Waiting:
+			return "Waiting";
+		case ClientStateEnum.Ended:
+			return "Ended";
+	}
+}
+
 export abstract class ClientState {
 	public constructor(
 		public readonly state: ClientStateEnum,

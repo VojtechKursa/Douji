@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { VideoRoomSignalRClient } from "../lib/SignalR/VideoRoomSignalRClient";
+import { Button, Form, FormControl, FormGroup, FormLabel, Stack } from "react-bootstrap";
 
 export function VideoUrlField({ client }: { client: VideoRoomSignalRClient | undefined }) {
 	const [url, setUrl] = useState<string>("");
@@ -22,11 +23,18 @@ export function VideoUrlField({ client }: { client: VideoRoomSignalRClient | und
 	}
 
 	return (
-		<div>
-			<input type="text" value={url} onChange={(e) => setUrl(e.target.value)}></input>
-			<button type="button" onClick={handleClick} disabled={url.length <= 0 || client == undefined}>
-				Play
-			</button>
-		</div>
+		<Form>
+			<Stack direction="horizontal" className="align-items-stretch">
+				<FormGroup className="flex-grow-1">
+					<FormLabel>Url to play</FormLabel>
+					<FormControl type="text" value={url} onChange={(e) => setUrl(e.target.value)} />
+				</FormGroup>
+				<div className="ms-4">
+					<Button className="h-100" onClick={handleClick} disabled={url.length <= 0 || client == undefined}>
+						Play
+					</Button>
+				</div>
+			</Stack>
+		</Form>
 	);
 }

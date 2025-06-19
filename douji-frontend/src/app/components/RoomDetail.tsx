@@ -1,22 +1,14 @@
+import { Button, Form, Table } from "react-bootstrap";
 import { ConnectionParameters } from "../lib/ConnectionParameters";
 import { Room } from "../lib/Room";
+import { useState } from "react";
 
-export function RoomDetail({
-	selectedRoom,
-}: {
-	selectedRoom: Room | undefined;
-}) {
+export function RoomDetail({ selectedRoom }: { selectedRoom: Room | undefined }) {
+	const [username, setUsername] = useState<string>("");
+	const [password, setPassword] = useState<string>("");
+
 	function handleJoin() {
-		const passwordInput = document.getElementById(
-			"password"
-		) as HTMLInputElement | null;
-		const password = passwordInput?.value;
-
 		if (selectedRoom == undefined) return;
-
-		const username = (
-			document.getElementById("username") as HTMLInputElement
-		).value;
 
 		new ConnectionParameters(selectedRoom.id, username, password).save();
 
@@ -25,27 +17,58 @@ export function RoomDetail({
 
 	return (
 		<div>
-			<div>ID: {selectedRoom?.id}</div>
-			<div>Name: {selectedRoom?.name}</div>
-			<div>
-				Password protected: {selectedRoom?.hasPassword ? "Y" : "N"}
+			<div className="d-flex justify-content-center pt-3 pb-1">
+				<Table striped bordered size="sm" className="w-75 mb-0">
+					<tbody>
+						<tr>
+							<td>ID</td>
+							<td>{selectedRoom?.id ?? ""}</td>
+						</tr>
+						<tr>
+							<td>Name</td>
+							<td>{selectedRoom?.name ?? ""}</td>
+						</tr>
+						<tr>
+							<td>Password</td>
+							<td>{selectedRoom == undefined ? "" : selectedRoom.hasPassword ? "Yes" : "No"}</td>
+						</tr>
+					</tbody>
+				</Table>
 			</div>
-			<div>
-				<label htmlFor="username">Username:</label>
-				<input id="username" type="text"></input>
-			</div>
-			{selectedRoom?.hasPassword ? (
-				<div>
-					<label htmlFor="password">Password:</label>
-					<input id="password" type="password"></input>
-				</div>
-			) : (
-				""
-			)}
-
-			<button onClick={handleJoin} disabled={selectedRoom == undefined}>
-				Join
-			</button>
+			<Form>
+				<Form.Group>
+					<Form.Label>Username</Form.Label>
+					<Form.Control
+						type="text"
+						value={username}
+						onChange={(e) => setUsername(e.target.value)}
+						isInvalid={username.length <= 0}
+					/>
+					<Form.Control.Feedback type="invalid">
+						{"Enter a username under which you'll join the selected room"}
+					</Form.Control.Feedback>
+				</Form.Group>
+				{selectedRoom?.hasPassword && (
+					<Form.Group>
+						<Form.Label>Password</Form.Label>
+						<Form.Control
+							type="password"
+							value={password}
+							onChange={(e) => setPassword(e.target.value)}
+							isInvalid={selectedRoom != undefined && selectedRoom.hasPassword && password.length <= 0}
+						/>
+						<Form.Control.Feedback type="invalid">
+							Password is required to join this room.
+						</Form.Control.Feedback>
+					</Form.Group>
+				)}
+				<Button
+					onClick={handleJoin}
+					disabled={selectedRoom == undefined || (selectedRoom.hasPassword && password.length <= 0)}
+				>
+					Join
+				</Button>
+			</Form>
 		</div>
 	);
 }

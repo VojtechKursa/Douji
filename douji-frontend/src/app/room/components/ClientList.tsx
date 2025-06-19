@@ -3,22 +3,25 @@
 import { useEffect, useState } from "react";
 import { VideoRoomSignalRClient } from "../lib/SignalR/VideoRoomSignalRClient";
 import { UserState } from "../lib/SignalR/Types/UserState";
-import { ClientStateUnstarted } from "../lib/SignalR/ClientStates/ClientState";
+import { clientStateToString, ClientStateUnstarted } from "../lib/SignalR/ClientStates/ClientState";
 import { TimeProvider } from "@/app/lib/TimeProvider";
+import { Table } from "react-bootstrap";
 
 export function ClientListEntry({ userState }: { userState: UserState }) {
 	let stateString = "";
 	if (userState.state != undefined) {
-		stateString = ` - ${userState.state.state} (${
-			userState.state.videoTime
-		} at ${userState.state.updatedAt.toString()})`;
+		const updatedAt = userState.state.updatedAt;
+
+		stateString = `${clientStateToString(userState.state.state)} at ${
+			userState.state.videoTime == null ? null : Math.round(userState.state.videoTime * 100) / 100
+		} (${updatedAt.getHours()}:${updatedAt.getMinutes()}:${updatedAt.getSeconds()}.${updatedAt.getMilliseconds()})`;
 	}
 
 	return (
-		<li>
-			{userState.user.name}
-			{stateString}
-		</li>
+		<tr>
+			<td>{userState.user.name}</td>
+			<td>{stateString}</td>
+		</tr>
 	);
 }
 
@@ -64,10 +67,21 @@ export function ClientList({ client }: { client: VideoRoomSignalRClient | undefi
 	}, [client]);
 
 	return (
-		<ul>
-			{users.map((user, index) => (
-				<ClientListEntry key={index} userState={user} />
-			))}
-		</ul>
+		<>
+			<h4>Clients</h4>
+			<Table className="client_list" bordered striped>
+				<thead>
+					<tr>
+						<th>Username</th>
+						<th>State</th>
+					</tr>
+				</thead>
+				<tbody>
+					{users.map((user, index) => (
+						<ClientListEntry key={index} userState={user} />
+					))}
+				</tbody>
+			</Table>
+		</>
 	);
 }

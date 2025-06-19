@@ -1,0 +1,18 @@
+/*@import "tailwindcss";*/
+
+@import "../../node_modules/bootstrap/dist/css/bootstrap.min.css";
+
+form {
+	& > div {
+		margin-bottom: 1em;
+
+		&:first-child {
+			margin-top: 0.5em;
+		}
+	}
+
+	& > button {
+		width: calc(100% - 2em);
+		margin-left: 1em;
+	}
+}

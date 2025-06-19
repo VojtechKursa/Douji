@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import "@/app/globals.scss";
+
 export const metadata: Metadata = {
 	title: "Douji",
 };
