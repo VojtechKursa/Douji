@@ -59,6 +59,7 @@ public class RoomMemory(IDoujiInMemoryDb parentDatabase) : IRoomMemory
 		if (roomsById.TryGetValue(id, out Room? room))
 		{
 			roomsById.Remove(id);
+			roomsByName.Remove(room.Name);
 
 			foreach (User user in room.Users)
 			{
