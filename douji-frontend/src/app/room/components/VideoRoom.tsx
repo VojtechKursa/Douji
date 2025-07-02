@@ -74,8 +74,8 @@ export function VideoRoom() {
 	}, [videoPlayerElementId]);
 
 	return (
-		<div className="d-flex flex-column flex-md-row">
-			<div className="w-100 flex-md-grow-1">
+		<div className="d-flex flex-column flex-lg-row">
+			<div className="w-100 flex-lg-grow-1">
 				<div>
 					<VideoPlayer
 						controller={playerController}
@@ -87,7 +87,7 @@ export function VideoRoom() {
 					<VideoUrlField client={playerController?.client} />
 				</div>
 			</div>
-			<div className="ps-md-3">
+			<div className="ps-lg-3">
 				<ClientList client={playerController?.client} />
 			</div>
 		</div>
