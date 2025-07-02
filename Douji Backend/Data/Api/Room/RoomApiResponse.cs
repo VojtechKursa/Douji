@@ -14,7 +14,7 @@ public class RoomApiResponse
 			Id = room.IdNotNull,
 			Name = room.Name,
 			HasPassword = room.HasPassword,
-			UserCount = room.Users.Count,
+			UserCount = room.UserCount,
 		};
 	}
 }

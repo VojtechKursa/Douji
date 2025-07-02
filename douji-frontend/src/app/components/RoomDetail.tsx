@@ -1,18 +1,32 @@
 import { Button, Form, Table } from "react-bootstrap";
-import { ConnectionParameters } from "../lib/ConnectionParameters";
 import { Room } from "../lib/Room";
 import { useState } from "react";
+import { ConnectionParameters } from "../lib/ConnectionParameters";
+import { joinRoom } from "../lib/JoinNegotiator";
 
 export function RoomDetail({ selectedRoom }: { selectedRoom: Room | undefined }) {
 	const [username, setUsername] = useState<string>("");
 	const [password, setPassword] = useState<string>("");
+	const [joining, setJoining] = useState<boolean>(false);
+	const [authError, setAuthError] = useState<string>("");
 
-	function handleJoin() {
+	async function handleJoin(): Promise<void> {
 		if (selectedRoom == undefined) return;
 
-		new ConnectionParameters(selectedRoom.id, username, password).save();
+		const room = selectedRoom;
 
-		window.location.href = `/room?roomId=${selectedRoom.id}`;
+		setJoining(true);
+
+		const joinResult = await joinRoom(room.id, username, password.length > 0 ? password : undefined);
+
+		if (joinResult instanceof ConnectionParameters) {
+			joinResult.save();
+			window.location.href = `/room?roomId=${room.id}`;
+		} else {
+			setAuthError(joinResult);
+		}
+
+		setJoining(false);
 	}
 
 	return (
@@ -64,10 +78,13 @@ export function RoomDetail({ selectedRoom }: { selectedRoom: Room | undefined })
 				)}
 				<Button
 					onClick={handleJoin}
-					disabled={selectedRoom == undefined || (selectedRoom.hasPassword && password.length <= 0)}
+					disabled={
+						selectedRoom == undefined || (selectedRoom.hasPassword && password.length <= 0) || joining
+					}
 				>
 					Join
 				</Button>
+				{authError.length > 0 && <div className="text-danger">{authError}</div>}
 			</Form>
 		</div>
 	);

@@ -1,16 +1,25 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
-using Douji.Backend.Data;
+using Douji.Backend.Auth;
 using Douji.Backend.Data.Database.Interfaces.DAO;
 using Douji.Backend.Model;
 using Douji.Backend.Model.ClientStates;
 using Douji.Backend.Model.RoomStates;
 using Douji.Backend.SignalR.Data;
 using Douji.Backend.SignalR.Interfaces;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Douji.Backend.SignalR.Hubs;
 
+[
+	Authorize
+	(
+		AuthenticationSchemes = AuthConstants.AuthenticationSchemes.RoomAccessScheme,
+		Policy = AuthConstants.AuthorizationPolicies.RoomAccessPolicy
+	)
+]
 public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>, IRoomHub
 {
 	private readonly IDoujiInMemoryDb db = database;
@@ -76,45 +85,91 @@ public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>, IRoomHu
 
 	public override async Task OnConnectedAsync()
 	{
-		var authenticationData = RoomAuthenticationData.FromQuery(Context.GetHttpContext()?.Request.Query);
-		if (authenticationData == null)
+		HttpContext? httpContext = Context.GetHttpContext() ?? throw new UnreachableException();
+
+		var roomIdQueryStr = httpContext.Request.Query.FirstOrDefault
+		(
+			parameter => parameter.Key == "roomId"
+		).Value.FirstOrDefault();
+
+		if (roomIdQueryStr == null || !int.TryParse(roomIdQueryStr, out int roomId))
 		{
-			await ForcedDisconnect("Invalid authentication header");
+			await ForcedDisconnect("Room ID not specified or invalid");
 			return;
 		}
 
-		var auth = authenticationData.Value;
+		var identity = httpContext.User.Identities.FirstOrDefault
+		(
+			identity => identity.Claims.Any
+			(
+				claim =>
+					claim.Issuer == AuthConstants.ClaimsIssuerLocal &&
+					claim.Type == AuthConstants.Claims.AuthorizedRoomIdClaim &&
+					claim.Value == roomId.ToString()
+			)
+		);
 
-		var room = db.Rooms.Get(auth.roomId);
+		if (identity == null)
+		{
+			await ForcedDisconnect("Not authorized to access this room.");
+			return;
+		}
+
+		var username =
+			identity.Claims.FirstOrDefault
+			(
+				claim =>
+					claim.Issuer == AuthConstants.ClaimsIssuerLocal && claim.Type == AuthConstants.Claims.UsernameClaim
+			)?.Value;
+
+		if (username == null)
+		{
+			await ForcedDisconnect("Username not specified.");
+			return;
+		}
+
+		var reservationId =
+			identity.Claims.FirstOrDefault
+			(
+				claim =>
+					claim.Issuer == AuthConstants.ClaimsIssuerLocal && claim.Type == AuthConstants.Claims.ReservationIdClaim
+			)?.Value;
+
+		if (reservationId == null)
+		{
+			await ForcedDisconnect("Username reservation not specified");
+			return;
+		}
+
+		var room = db.Rooms.Get(roomId);
 		if (room == null)
 		{
-			await ForcedDisconnect("Invalid room");
+			await ForcedDisconnect("Invalid room ID");
 			return;
 		}
 
-		if (room.PasswordHash != null)
-		{
-			if (auth.password == null || Hash.ToHex(Hash.Digest(auth.password)) != room.PasswordHash)
-			{
-				await ForcedDisconnect("Invalid password");
-				return;
-			}
-		}
+		var reservation = await room.GetReservation(username);
 
-		User user = new(null, room, auth.username, Context.ConnectionId);
-		if (!user.IsValid())
+		if (reservation == null || reservation.Id != reservationId)
 		{
-			await ForcedDisconnect("Invalid username");
+			await ForcedDisconnect("Invalid username reservation");
 			return;
 		}
+
+		User user = reservation.ToUser(Context.ConnectionId);
 
 		if (!db.Users.Create(user))
 		{
-			await ForcedDisconnect("Invalid or duplicate username");
+			await ForcedDisconnect("Invalid or duplicit username");
 			return;
 		}
 
-		room.Users.Add(user);
+		if (!await room.AddUser(user, reservation))
+		{
+			db.Users.Delete(room, user.IdNotNull);
+			await ForcedDisconnect("User with identical username is already connected to the room or has that name reserved");
+			return;
+		}
 
 		if (room.RoomState is RoomStateWaiting rs)
 		{
@@ -136,16 +191,31 @@ public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>, IRoomHu
 		await Clients
 			.GroupExcept(groupId, [Context.ConnectionId])
 			.UserJoined(HubUserDTO.FromUser(user));
+
+		if (reservation != null)
+		{
+			db.Reservations.Delete(reservation.Id);
+		}
 	}
 
 	public override async Task OnDisconnectedAsync(Exception? exception)
 	{
+		var httpContext = Context.GetHttpContext();
+		if (httpContext != null)
+		{
+			try
+			{
+				await httpContext.SignOutAsync(AuthConstants.AuthenticationSchemes.RoomAccessScheme);
+			}
+			catch { }
+		}
+
 		var user = GetUser(Context.ConnectionId);
 		if (user == null)
 			return;
 
 		var room = user.Room;
-		room.Users.Remove(user);
+		await room.RemoveUser(user);
 
 		string group = room.IdNotNull.ToString();
 
@@ -156,7 +226,7 @@ public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>, IRoomHu
 
 		await Clients.Group(group).UserLeft(HubUserDTO.FromUser(user));
 
-		if (room.Users.Count <= 0)
+		if (room.UserCount <= 0)
 		{
 			if (room.RoomState is RoomStateWithTime state)
 			{

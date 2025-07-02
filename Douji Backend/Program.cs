@@ -1,6 +1,12 @@
+using Douji.Backend.Auth;
+using Douji.Backend.Auth.Authentication.RoomAccess;
+using Douji.Backend.Auth.Authentication.Skip;
+using Douji.Backend.Auth.Authorization.RoomAccess;
+using Douji.Backend.Auth.Authorization.RoomAccess.Handlers;
 using Douji.Backend.Data.Database.DAO;
 using Douji.Backend.Data.Database.Interfaces.DAO;
 using Douji.Backend.SignalR.Hubs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Douji.Backend
 {
@@ -22,6 +28,17 @@ namespace Douji.Backend
 				app.Urls.Add(url);
 			}
 
+			{
+				var db = app.Services.GetService<IDoujiInMemoryDb>();
+
+				if (db != null)
+				{
+					TimeSpan reservationTimeout = app.Environment.IsDevelopment() ? TimeSpan.FromMinutes(5) : TimeSpan.FromMinutes(1);
+
+					PeriodicTasks.ReservationCleanupTask(db.Reservations, reservationTimeout);
+				}
+			}
+
 			app.Run();
 		}
 
@@ -30,13 +47,22 @@ namespace Douji.Backend
 			public static void ConfigureServices(WebApplicationBuilder builder)
 			{
 				AddEndpointServices(builder);
-				AddSecurityServices(builder);
-				AddSwagger(builder);
+
+				AddCors(builder);
+
+				AddAuthentication(builder);
+				AddAuthorization(builder);
+
+				if (builder.Environment.IsDevelopment())
+				{
+					AddSwagger(builder);
+				}
+
 				AddCustomServices(builder);
 			}
 
 			private static void AddCustomServices(WebApplicationBuilder builder) =>
-			builder.Services.AddSingleton<IDoujiInMemoryDb, DoujiInMemoryDb>();
+				builder.Services.AddSingleton<IDoujiInMemoryDb, DoujiInMemoryDb>();
 
 			private static void AddEndpointServices(WebApplicationBuilder builder)
 			{
@@ -50,7 +76,7 @@ namespace Douji.Backend
 				});
 			}
 
-			private static void AddSecurityServices(WebApplicationBuilder builder)
+			private static void AddCors(WebApplicationBuilder builder)
 			{
 				string[] frontendUrls = builder.Configuration.GetSection("FrontendUrls").Get<string[]>() ?? [];
 
@@ -61,12 +87,37 @@ namespace Douji.Backend
 						options.AddDefaultPolicy(policy =>
 						{
 							policy.WithOrigins(frontendUrls);
-							policy.WithMethods("GET", "POST", "PUT", "DELETE");
+							policy.WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
 							policy.AllowCredentials();
 							policy.AllowAnyHeader();
 						});
 					});
 				}
+			}
+
+			private static void AddAuthentication(WebApplicationBuilder builder)
+			{
+				builder.Services.AddAuthentication(AuthConstants.AuthenticationSchemes.SkipScheme)
+					.AddScheme<SkipAuthenticationOptions, SkipAuthenticationHandler>(
+						AuthConstants.AuthenticationSchemes.SkipScheme,
+						options => { }
+					)
+					.AddScheme<RoomAccessAuthenticationOptions, RoomAccessAuthenticationHandler>(
+						AuthConstants.AuthenticationSchemes.RoomAccessScheme,
+						options => options.ClaimsIssuer = AuthConstants.ClaimsIssuerLocal);
+			}
+
+			private static void AddAuthorization(WebApplicationBuilder builder)
+			{
+				builder.Services.AddSingleton<IAuthorizationHandler, RoomAccessAuthorizationHandler>();
+
+				builder.Services.AddAuthorizationBuilder()
+					.AddPolicy
+					(
+						AuthConstants.AuthorizationPolicies.RoomAccessPolicy,
+						policy =>
+							policy.AddRequirements(new RoomAccessAuthoritationRequirement())
+					);
 			}
 
 			private static void AddSwagger(WebApplicationBuilder builder)
@@ -91,12 +142,42 @@ namespace Douji.Backend
 					app.UseHttpsRedirection();
 				}
 
+				app.UseAuthentication();
 				app.UseAuthorization();
 
 				app.MapControllers();
 				app.MapHub<RoomHub>("/hub/room");
 
 				app.UseCors();
+			}
+		}
+
+		private static class PeriodicTasks
+		{
+			public static Task ReservationCleanupTask(IUserReservationsMemory reservations, TimeSpan reservationTimeout, CancellationToken? cancellationToken = null)
+			{
+				TimeSpan limit = reservationTimeout;
+				TimeSpan period = limit / 4;
+
+				int periodMs = (int)period.TotalMilliseconds;
+
+				async Task function()
+				{
+					while (true)
+					{
+						await Task.Delay(periodMs);
+						await reservations.RemoveAllOlderThan(limit);
+					}
+				}
+
+				if (cancellationToken == null)
+				{
+					return Task.Run(function);
+				}
+				else
+				{
+					return Task.Run(function, cancellationToken.Value);
+				}
 			}
 		}
 	}

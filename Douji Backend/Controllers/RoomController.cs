@@ -1,12 +1,18 @@
-﻿using Douji.Backend.Data.Api.Room;
+﻿using System.Security.Claims;
+using Douji.Backend.Auth;
+using Douji.Backend.Data;
+using Douji.Backend.Data.Api.Room;
 using Douji.Backend.Data.Database.Interfaces.DAO;
 using Douji.Backend.Model;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Douji.Backend.Controllers;
 
 [ApiController]
 [Route("/api/room")]
+[AllowAnonymous]
 public class RoomController(IDoujiInMemoryDb database) : Controller
 {
 	private readonly IDoujiInMemoryDb db = database;
@@ -63,5 +69,52 @@ public class RoomController(IDoujiInMemoryDb database) : Controller
 		db.Rooms.Delete(room.IdNotNull);
 
 		return NoContent();
+	}
+
+	[HttpPost("auth")]
+	public async Task<IActionResult> Authenticate([FromQuery] int roomId, [FromBody] RoomAuthenticationRequest request)
+	{
+		if (!request.IsValid()) return BadRequest();
+
+		var room = db.Rooms.Get(roomId);
+
+		if (room == null) return NotFound();
+
+		if (room.PasswordHash != null)
+		{
+			if (request.Password == null)
+			{
+				return Unauthorized();
+			}
+
+			if (room.PasswordHash != Hash.ToHex(await Hash.DigestAsync(request.Password)))
+			{
+				return Unauthorized();
+			}
+		}
+		else if (request.Password != null)
+		{
+			return Unauthorized();
+		}
+
+		UserReservation? reservation = null;
+
+		do
+		{
+			reservation = await room.ReserveName(request.Username);
+
+			if (reservation == null)
+			{
+				return Conflict();
+			}
+
+			if (!db.Reservations.Create(reservation))
+			{
+				await room.CancelReservation(request.Username);
+				reservation = null;
+			}
+		} while (reservation == null);
+
+		return Ok(new RoomAuthenticationResult(reservation.Id));
 	}
 }

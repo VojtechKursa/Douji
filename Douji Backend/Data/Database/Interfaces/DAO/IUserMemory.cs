@@ -10,5 +10,6 @@ public interface IUserMemory
 	IEnumerable<User> List();
 	IEnumerable<User>? ListRoomUsers(Room room);
 	User? Get(Room room, int id);
+	User? Get(Room room, string username);
 	User? Get(string connectionId);
 }

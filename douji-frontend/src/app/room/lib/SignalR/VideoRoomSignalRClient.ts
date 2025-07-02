@@ -17,10 +17,11 @@ export class VideoRoomSignalRClient {
 
 	protected readonly stateChangeHandlers: ClientStateChangeHandler[] = [];
 
-	constructor(roomId: number, public readonly username: string, password?: string) {
-		const query = `roomId=${roomId}&username=${encodeURIComponent(username)}${
-			password != null ? `&password=${encodeURIComponent(password)}` : ""
-		}`;
+	private readonly onConnectedHandlers: (() => void)[] = [];
+	private readonly onRejectedHandlers: ((reason: string | undefined) => void)[] = [];
+
+	constructor(roomId: number, reservationId: string, username: string) {
+		const query = `roomId=${roomId}&username=${encodeURI(username)}&reservation=${encodeURI(reservationId)}`;
 
 		this.connection = new HubConnectionBuilder()
 			.withUrl(`${ClientConfig.backendUrl}/hub/room?${query}`)
@@ -80,11 +81,32 @@ export class VideoRoomSignalRClient {
 	}
 
 	public connect(): Promise<void> {
-		return this.connection.start();
+		return this.connection.start().then(
+			() => {
+				for (const handler of this.onConnectedHandlers) {
+					handler();
+				}
+			},
+			(r) => {
+				const reason = typeof r === "string" ? r : undefined;
+
+				for (const handler of this.onRejectedHandlers) {
+					handler(reason);
+				}
+			}
+		);
 	}
 
 	public disconnect(): Promise<void> {
 		return this.connection.stop();
+	}
+
+	public onConnected(handler: () => void): void {
+		this.onConnectedHandlers.push(handler);
+	}
+
+	public onRejected(handler: (reason: string | undefined) => void): void {
+		this.onRejectedHandlers.push(handler);
 	}
 
 	public onWelcome(handler: (data: WelcomeData) => void): void {

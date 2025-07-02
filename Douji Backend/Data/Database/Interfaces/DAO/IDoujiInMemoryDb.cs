@@ -4,4 +4,6 @@ public interface IDoujiInMemoryDb
 {
 	IRoomMemory Rooms { get; }
 	IUserMemory Users { get; }
+
+	IUserReservationsMemory Reservations { get; }
 }

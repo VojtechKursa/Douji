@@ -3,6 +3,7 @@ import ClientConfig from "../lib/ClientConfig";
 import { Room } from "../lib/Room";
 import { Button, Form } from "react-bootstrap";
 import { ConnectionParameters } from "../lib/ConnectionParameters";
+import { joinRoom } from "../lib/JoinNegotiator";
 
 abstract class RoomCreationResult {
 	public constructor(public readonly successful: boolean) {}
@@ -25,6 +26,7 @@ export function RoomCreation() {
 	const [nameError, setNameError] = useState<string>("");
 	const [password, setPassword] = useState<string>("");
 	const [username, setUsername] = useState<string>("");
+	const [creating, setCreating] = useState<boolean>(false);
 	const [roomCreationResult, setRoomCreationResult] = useState<RoomCreationResult>();
 
 	async function createRoom() {
@@ -32,6 +34,8 @@ export function RoomCreation() {
 			setNameError("Name must be specified");
 			return;
 		}
+
+		setCreating(true);
 
 		const actualPassword = password != undefined && password.length > 0 ? password : undefined;
 
@@ -50,11 +54,23 @@ export function RoomCreation() {
 
 			setRoomCreationResult(new RoomCreationResultSuccess(createdRoom));
 
-			new ConnectionParameters(createdRoom.id, username, password.length > 0 ? password : undefined).save();
-			window.location.href = `/room?roomId=${createdRoom.id}`;
+			const joinResult = await joinRoom(createdRoom.id, username, actualPassword);
+
+			if (joinResult instanceof ConnectionParameters) {
+				joinResult.save();
+				window.location.href = `/room?roomId=${createdRoom.id}`;
+			} else {
+				setRoomCreationResult(
+					new RoomCreationResultFail(
+						"Room was successfully created, but attempt to join resulted in error: " + joinResult
+					)
+				);
+			}
 		} else {
 			setRoomCreationResult(new RoomCreationResultFail("Room with identical name probably exists."));
 		}
+
+		setCreating(false);
 	}
 
 	return (
@@ -65,6 +81,7 @@ export function RoomCreation() {
 					type="text"
 					value={name}
 					onChange={(e) => setName(e.target.value)}
+					disabled={creating}
 					isInvalid={nameError.length > 0}
 				/>
 				<Form.Control.Feedback type={nameError.length > 0 ? "invalid" : "valid"}>
@@ -73,13 +90,19 @@ export function RoomCreation() {
 			</Form.Group>
 			<Form.Group>
 				<Form.Label>Room password</Form.Label>
-				<Form.Control type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+				<Form.Control
+					type="password"
+					value={password}
+					disabled={creating}
+					onChange={(e) => setPassword(e.target.value)}
+				/>
 			</Form.Group>
 			<Form.Group>
 				<Form.Label>Username</Form.Label>
 				<Form.Control
 					type="text"
 					value={username}
+					disabled={creating}
 					onChange={(e) => setUsername(e.target.value)}
 					isInvalid={username.length <= 0}
 				/>
@@ -87,7 +110,9 @@ export function RoomCreation() {
 					{"Please specify username under which you'll join your created room"}
 				</Form.Control.Feedback>
 			</Form.Group>
-			<Button onClick={createRoom}>Create room</Button>
+			<Button onClick={createRoom} disabled={creating}>
+				Create room
+			</Button>
 			<Form.Text className={roomCreationResult?.successful ? "text-success" : "text-danger"}>
 				{roomCreationResult instanceof RoomCreationResultFail
 					? roomCreationResult.message

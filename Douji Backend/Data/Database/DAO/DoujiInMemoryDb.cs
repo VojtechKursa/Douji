@@ -8,9 +8,12 @@ public class DoujiInMemoryDb : IDoujiInMemoryDb
 
 	public IUserMemory Users { get; }
 
+	public IUserReservationsMemory Reservations { get; }
+
 	public DoujiInMemoryDb()
 	{
 		Rooms = new RoomMemory(this);
 		Users = new UserMemory(this);
+		Reservations = new UserReservationsMemory();
 	}
 }

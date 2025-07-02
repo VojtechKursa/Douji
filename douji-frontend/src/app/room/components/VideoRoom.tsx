@@ -34,12 +34,7 @@ export function VideoRoom() {
 		const queryRoomId = getQueryRoomId();
 		const params = ConnectionParameters.load();
 
-		if (
-			params == undefined ||
-			Date.now() - params.dateCreatedUnix > 10000 ||
-			queryRoomId == undefined ||
-			queryRoomId != params.roomId
-		) {
+		if (params == undefined || queryRoomId == undefined || queryRoomId != params.roomId) {
 			window.location.href = "/";
 			return;
 		}
@@ -55,7 +50,7 @@ export function VideoRoom() {
 		if (videoPlayerElementId == undefined) return;
 
 		const videoPlayer = new YouTubeVideoPlayer(videoPlayerElementId);
-		const videoRoomClient = new VideoRoomSignalRClient(params.roomId, params.username, params.password);
+		const videoRoomClient = new VideoRoomSignalRClient(params.roomId, params.reservationId, params.username);
 		setPlayerController(new PlayerController(videoPlayer, videoRoomClient));
 
 		videoRoomClient.onForcedDisconnect((reason: string | undefined) => {
@@ -63,6 +58,7 @@ export function VideoRoom() {
 			alert(`Server closed connection. ${reasonText}`);
 		});
 		videoRoomClient.onClose(() => (window.location.href = "/"));
+		videoRoomClient.onRejected(() => (window.location.href = "/"));
 
 		videoRoomClient.connect();
 

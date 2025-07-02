@@ -8,13 +8,24 @@ public class UserMemory(IDoujiInMemoryDb parentDatabase) : IUserMemory
 	protected readonly IDoujiInMemoryDb db = parentDatabase;
 
 	private readonly Dictionary<Room, Dictionary<int, User>> usersById = [];
+	private readonly Dictionary<Room, Dictionary<string, User>> usersByName = [];
 	private readonly Dictionary<Room, int> nextIds = [];
 
 	private readonly Dictionary<string, User> usersByConnectionId = [];
 
-	private Dictionary<int, User>? GetRoomDictionary(Room room)
+	private Dictionary<int, User>? GetRoomUserIdDictionary(Room room)
 	{
 		if (usersById.TryGetValue(room, out var dict))
+		{
+			return dict;
+		}
+
+		return null;
+	}
+
+	private Dictionary<string, User>? GetRoomUserNameDictionary(Room room)
+	{
+		if (usersByName.TryGetValue(room, out var dict))
 		{
 			return dict;
 		}
@@ -32,13 +43,20 @@ public class UserMemory(IDoujiInMemoryDb parentDatabase) : IUserMemory
 		int idToAssign = start;
 		start -= 1;
 
-		var roomDictionary = GetRoomDictionary(user.Room);
-		if (roomDictionary == null)
+		var roomUserIdDictionary = GetRoomUserIdDictionary(user.Room);
+		if (roomUserIdDictionary == null)
 		{
-			roomDictionary = [];
-			usersById[user.Room] = roomDictionary;
+			roomUserIdDictionary = [];
+			usersById[user.Room] = roomUserIdDictionary;
 		}
-		else if (roomDictionary.Any((kvp) => kvp.Value.Name == user.Name))
+
+		var roomUserNameDictionary = GetRoomUserNameDictionary(user.Room);
+		if (roomUserNameDictionary == null)
+		{
+			roomUserNameDictionary = [];
+			usersByName[user.Room] = roomUserNameDictionary;
+		}
+		else if (roomUserNameDictionary.ContainsKey(user.Name))
 		{
 			// If room dictionary contains user with duplicit name
 			return false;
@@ -46,7 +64,7 @@ public class UserMemory(IDoujiInMemoryDb parentDatabase) : IUserMemory
 
 		while (true)
 		{
-			if (!roomDictionary.ContainsKey(idToAssign))
+			if (!roomUserIdDictionary.ContainsKey(idToAssign))
 			{
 				break;
 			}
@@ -73,7 +91,8 @@ public class UserMemory(IDoujiInMemoryDb parentDatabase) : IUserMemory
 
 		user.Id = idToAssign;
 
-		roomDictionary[idToAssign] = user;
+		roomUserIdDictionary[idToAssign] = user;
+		roomUserNameDictionary[user.Name] = user;
 		usersByConnectionId[user.ConnectionId] = user;
 
 		nextIds[user.Room] = idToAssign + 1;
@@ -82,29 +101,47 @@ public class UserMemory(IDoujiInMemoryDb parentDatabase) : IUserMemory
 
 	public bool Delete(Room room, int id)
 	{
-		var roomDictionary = GetRoomDictionary(room);
-		if (roomDictionary == null)
+		var roomUserIdDictionary = GetRoomUserIdDictionary(room);
+		if (roomUserIdDictionary == null)
 			return false;
 
-		if (!roomDictionary.TryGetValue(id, out User? user))
+		if (!roomUserIdDictionary.TryGetValue(id, out User? user))
 			return false;
 
+		roomUserIdDictionary.Remove(id);
 		usersByConnectionId.Remove(user.ConnectionId);
 
-		return roomDictionary.Remove(id);
+		var roomUserNameDictionary = GetRoomUserNameDictionary(room);
+		roomUserNameDictionary?.Remove(user.Name);
+
+		return true;
 	}
 
 	public IEnumerable<User> List() => usersByConnectionId.Values;
 
-	public IEnumerable<User>? ListRoomUsers(Room room) => GetRoomDictionary(room)?.Values;
+	public IEnumerable<User>? ListRoomUsers(Room room) => GetRoomUserIdDictionary(room)?.Values;
 
 	public User? Get(Room room, int id)
 	{
-		var roomDictionary = GetRoomDictionary(room);
+		var roomDictionary = GetRoomUserIdDictionary(room);
 		if (roomDictionary == null)
 			return null;
 
 		if (roomDictionary.TryGetValue(id, out User? user))
+		{
+			return user;
+		}
+
+		return null;
+	}
+
+	public User? Get(Room room, string username)
+	{
+		var roomDictionary = GetRoomUserNameDictionary(room);
+		if (roomDictionary == null)
+			return null;
+
+		if (roomDictionary.TryGetValue(username, out User? user))
 		{
 			return user;
 		}

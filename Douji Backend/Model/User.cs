@@ -1,16 +1,11 @@
 ﻿using Douji.Backend.Exceptions;
 using Douji.Backend.Model.ClientStates;
-using Douji.Backend.Model.Interfaces;
 
 namespace Douji.Backend.Model;
 
-public class User : IValidatable
+public class User : UserBase
 {
 	public int? Id { get; set; }
-
-	public Room Room { get; }
-
-	public string Name { get; set; }
 
 	public string ConnectionId { get; }
 
@@ -18,13 +13,15 @@ public class User : IValidatable
 
 	public int IdNotNull => Id ?? throw new UnexpectedNullException(nameof(Id), nameof(User));
 
+	public string Secret { get; }
 
 
-	public User(int? id, Room room, string name, string connectionId, ClientState? clientState = null)
+
+	public User(int? id, string secret, Room room, string name, string connectionId, ClientState? clientState = null)
+		: base(room, name)
 	{
 		Id = id;
-		Room = room;
-		Name = name;
+		Secret = secret;
 		ConnectionId = connectionId;
 
 		if (clientState == null)
@@ -42,5 +39,5 @@ public class User : IValidatable
 		}
 	}
 
-	public bool IsValid() => !(string.IsNullOrEmpty(ConnectionId) || string.IsNullOrEmpty(Name));
+	public override bool IsValid() => base.IsValid() && !string.IsNullOrEmpty(ConnectionId);
 }
