@@ -228,10 +228,7 @@ public class RoomHub(IDoujiInMemoryDb database) : Hub<IVideoRoomClient>, IRoomHu
 
 		if (room.UserCount <= 0)
 		{
-			if (room.RoomState is RoomStateWithTime state)
-			{
-				room.RoomState = new RoomStatePaused(state.GetCurrentExpectedTime(), DateTime.UtcNow);
-			}
+			db.Rooms.Delete(room.IdNotNull);
 		}
 		else if (room.RoomState is RoomStateWaiting state)
 		{
