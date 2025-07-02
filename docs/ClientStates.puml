@@ -1,0 +1,51 @@
+@startuml Client States
+
+hide empty description
+
+state Unstarted
+
+state Buffering
+state Playing
+state Paused
+
+state Waiting
+
+state Ended
+
+[*] --> Unstarted
+
+Unstarted --> Buffering : Initial play
+
+Buffering --> Playing : Last client buffered
+Buffering --> Paused : Pause
+
+Playing --> Paused : Pause
+Playing --> Buffering : Slow connection
+
+Paused --> Buffering : Play when unbuffered
+Paused -left-> Playing : Play
+
+Playing --> Ended
+Buffering --> Ended
+Unstarted --> Ended
+Paused -left-> Ended
+Waiting --> Ended
+
+Paused -[#blue]-> Paused : seek
+Playing -[#blue]-> Buffering : seek when unbuffered
+Playing -[#blue]-> Playing : seek
+Buffering -[#blue]-> Buffering : seek
+Waiting -[#blue]-> Waiting : seek
+Waiting -[#blue]-> Buffering : seek when unbuffered
+
+Ended --> Buffering : re-play
+
+Waiting -right-> Playing : Last client buffered
+Waiting --> Paused : Pause
+
+Buffering --> Waiting : Video buffered
+Playing --> Waiting : Waiting for others
+
+note "New video resets state" as N1
+
+@enduml

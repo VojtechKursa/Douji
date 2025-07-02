@@ -11,10 +11,10 @@ public class RoomApiResponse
 	{
 		return new RoomApiResponse()
 		{
-			Id = room.Id,
+			Id = room.IdNotNull,
 			Name = room.Name,
 			HasPassword = room.HasPassword,
-			UserCount = room.Users.Count,
+			UserCount = room.UserCount,
 		};
 	}
 }

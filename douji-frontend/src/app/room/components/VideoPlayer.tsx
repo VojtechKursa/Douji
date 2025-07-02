@@ -1,40 +1,47 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { VideoRoomSignalRClient } from "../lib/SignalR/VideoRoomSignalRClient";
-import { YouTubeVideoPlayer } from "../lib/Player/YouTubeVideoPlayer";
+import { PlayerController } from "../lib/PlayerController";
 
-const videoPlayerId = "player";
-let videoPlayer: YouTubeVideoPlayer | undefined = undefined;
+const playerElementId = "player";
 
 export function VideoPlayer({
-	client,
+	controller,
+	videoPlayerElementId,
+	setVideoPlayerElementId,
 }: {
-	client: VideoRoomSignalRClient | undefined;
+	controller: PlayerController | undefined;
+	videoPlayerElementId: string | undefined;
+	setVideoPlayerElementId: (value: string) => void;
 }) {
 	const [currentlyPlayedUrl, setCurrentlyPlayedUrl] = useState<string>();
 
 	useEffect(() => {
-		if (client == undefined) return;
+		if (videoPlayerElementId == undefined || videoPlayerElementId != playerElementId) {
+			setVideoPlayerElementId(playerElementId);
+			return;
+		}
 
-		videoPlayer = new YouTubeVideoPlayer(videoPlayerId);
+		if (controller == undefined) return;
 
-		client.onMethod("PlayVideo", (_, url) => {
-			setCurrentlyPlayedUrl(url);
+		const client = controller.client;
 
-			const idMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube|yt)\.com\/watch\?v=([\w\d]+)/i);
-			if (idMatch == null)
-				return;
-			const id = idMatch[1];
-
-			videoPlayer?.playVideoById(id);
+		client.onWelcome(async (data) => {
+			if (data.currentlyPlayedURL != null) {
+				setCurrentlyPlayedUrl(data.currentlyPlayedURL);
+			}
 		});
-	}, [client]);
+
+		client.onPlayVideo(async (_, url) => {
+			console.log(`Received PlayVideo message: ${url}`);
+			setCurrentlyPlayedUrl(url);
+		});
+	}, [controller, videoPlayerElementId, setVideoPlayerElementId]);
 
 	return (
 		<div>
 			<div>Currently played URL: {currentlyPlayedUrl}</div>
-			<div id={videoPlayerId}></div>
+			<div id={playerElementId}></div>
 		</div>
 	);
 }

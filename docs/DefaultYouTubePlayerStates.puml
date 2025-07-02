@@ -1,0 +1,80 @@
+@startuml Default YouTube Player States
+
+hide empty description
+
+state "Unstarted (-1)" as Unstarted
+state "Cued (5)" as Cued : Video has thumbnail\nloaded and is ready to play
+
+state "Playing (1)" as Playing
+state "Paused (2)" as Paused
+state "Buffering (3)" as Buffering
+
+state "Ended (0)" as Ended
+
+
+
+[*] -[#green]-> Unstarted : loadVideo
+[*] -[#orange]-> Unstarted : cueVideo
+
+Unstarted -left[#orange]-> Cued : cueVideo
+Unstarted -[#green]-> Buffering : loadVideo
+Unstarted -[#purple]-> Buffering : Was "Cued" and played
+Unstarted --> Ended
+
+Cued -right[#purple]-> Unstarted : play
+
+Buffering -[#red]-> Buffering : seek when buffering
+Buffering --> Ended
+Buffering --> Playing : Buffered
+Buffering --> Paused : Paused
+note on link
+	If paused before
+	state change to
+	"Playing"
+	* Even when video
+	   is buffered
+	* State change to
+	   "Playing" is <b>lost</b>
+	* This transition takes
+	   always at least <b>600 ms</b>
+	   despite play transition
+	   taking usually about
+	   200 ms (both measured)
+end note
+
+Playing --> Paused : pause
+Playing -[#blue]-> Paused : seek with click\nwhen playing
+Playing --> Ended : Video ended
+Playing --> Buffering : Hit end of buffered\nregion
+Playing -[#blue]-> Buffering : seek when playing
+
+Paused --> Buffering : play
+Paused -[#blue]-> Buffering : seek with click\nwhen playing
+note on link
+	Occurs
+	~100 ms
+	after the
+	transition
+	to Paused
+	(measured)
+end note
+Paused -[#red]-> Paused : seek when paused
+Paused --> Ended
+
+Ended --> Playing : Return to video
+note on link
+	Followed by either
+	"seek when playing"
+	or
+	"seek with click
+	when playing"
+	flow
+end note
+
+note as N1
+New video resets state.
+
+Red transitions don't emit event.
+end note
+
+@enduml

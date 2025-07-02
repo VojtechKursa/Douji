@@ -1,0 +1,27 @@
+form {
+	& > div {
+		margin-left: 1em;
+		margin-right: 1em;
+	}
+}
+
+table {
+	td,
+	th {
+		&.room_list-room_id {
+			width: 4em;
+			text-align: right;
+		}
+
+		&.room_list-room_password {
+			width: 4em;
+			text-align: center;
+		}
+	}
+
+	tr.room-selected {
+		> td {
+			background-color: var(--bs-primary-bg-subtle);
+		}
+	}
+}

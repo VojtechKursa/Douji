@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace Douji.Backend.Model;
+namespace Douji.Backend.Data;
 
 public static class Hash
 {

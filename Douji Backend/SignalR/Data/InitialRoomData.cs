@@ -2,6 +2,7 @@
 
 public class InitialRoomData
 {
-	public required HubUserDTO[] Users { get; set; }
+	public required HubUserStateDTO[] UserStates { get; set; }
+	public required HubRoomStateDTO RoomState { get; set; }
 	public string? CurrentlyPlayedURL { get; set; }
 }
