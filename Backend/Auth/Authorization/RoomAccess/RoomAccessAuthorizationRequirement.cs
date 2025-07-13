@@ -2,4 +2,4 @@
 
 namespace Douji.Backend.Auth.Authorization.RoomAccess;
 
-public class RoomAccessAuthoritationRequirement : IAuthorizationRequirement;
+public class RoomAccessAuthorizationRequirement : IAuthorizationRequirement;
