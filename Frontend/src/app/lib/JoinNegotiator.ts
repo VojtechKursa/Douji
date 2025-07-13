@@ -1,13 +1,15 @@
-import ClientConfig from "./ClientConfig";
 import { ConnectionParameters } from "./ConnectionParameters";
 import { UnreachableError } from "./Errors/UnreachableError";
+import { Service, ServicesResolver } from "./ServicesResolver";
 
 export async function joinRoom(
 	roomId: number,
 	username: string,
 	password?: string
 ): Promise<ConnectionParameters | string> {
-	const authenticationResult = await fetch(`${ClientConfig.backendUrl}/api/room/auth?roomId=${roomId}`, {
+	const backendUrl = await ServicesResolver.instance.getService(Service.Backend);
+
+	const authenticationResult = await fetch(`${backendUrl}/api/room/auth?roomId=${roomId}`, {
 		body: JSON.stringify({
 			username: username,
 			password: password == undefined ? undefined : password.length > 0 ? password : undefined,

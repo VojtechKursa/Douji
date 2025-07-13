@@ -7,6 +7,7 @@
 		"enduml",
 		"esproj",
 		"highres",
+		"Sendfile",
 		"signalr",
 		"startuml",
 		"Swashbuckle",
@@ -23,7 +24,8 @@
 		".git/{index,*refs,*HEAD}",
 		".vscode",
 		".vscode-insiders",
-		"**/.gitignore"
+		"**/.gitignore",
+		"**/Dockerfile*"
 	],
 	"plantuml.exportOutDir": "docs/out",
 	"plantuml.exportSubFolder": false

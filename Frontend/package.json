@@ -3,32 +3,33 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack -p 3000",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3000",
+    "start_docker": "next start -p $DOUJI_FRONTEND_PORT",
     "lint": "next lint"
   },
   "dependencies": {
-    "@microsoft/signalr": "^8.0.7",
-    "bootstrap": "^5.3.7",
-    "next": "15.3.2",
-    "react": "^19.0.0",
-    "react-bootstrap": "^2.10.10",
-    "react-dom": "^19.0.0",
-    "youtube-player": "^5.6.0"
+    "next": "15.3.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@microsoft/signalr": "^8.0.7",
     "@next/env": "^15.3.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-bootstrap": "^1.0.1",
     "@types/react-dom": "^19",
     "@types/youtube-player": "^5.5.11",
+    "bootstrap": "^5.3.7",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
     "postcss": "^8.5.6",
+    "react": "^19.0.0",
+    "react-bootstrap": "^2.10.10",
+    "react-dom": "^19.0.0",
     "sass": "^1.89.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "youtube-player": "^5.6.0"
   }
 }

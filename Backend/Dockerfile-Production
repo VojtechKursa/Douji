@@ -1,0 +1,27 @@
+FROM alpine:latest
+
+# Environment variables
+ENV DOUJI_BACKEND_URLS="http://0.0.0.0:8080"
+ENV DOUJI_BACKEND_DOCKER_EXPOSE="8080"
+ENV DOUJI_BACKEND_ALLOWED_HOSTS=""
+ENV DOUJI_BACKEND_ALLOWED_CORS_URLS=""
+ENV DOUJI_BACKEND_HTTPS_REDIRECT="0"
+
+
+
+# Install ASP.NET runtime
+RUN apk add aspnetcore8-runtime
+
+# Copy built application
+WORKDIR /app
+COPY bin/Publish .
+
+# Setup user
+RUN adduser -S -H -D -s /bin/bash dotnet
+USER dotnet
+
+# Set ports
+EXPOSE ${DOUJI_BACKEND_DOCKER_EXPOSE}
+
+# Define entrypoint
+ENTRYPOINT [ "dotnet", "Douji.Backend.dll" ]

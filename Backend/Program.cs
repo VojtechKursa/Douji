@@ -1,12 +1,15 @@
+using System.Net;
 using Douji.Backend.Auth;
 using Douji.Backend.Auth.Authentication.RoomAccess;
 using Douji.Backend.Auth.Authentication.Skip;
 using Douji.Backend.Auth.Authorization.RoomAccess;
 using Douji.Backend.Auth.Authorization.RoomAccess.Handlers;
+using Douji.Backend.Config.EnvironmentVariables;
 using Douji.Backend.Data.Database.DAO;
 using Douji.Backend.Data.Database.Interfaces.DAO;
 using Douji.Backend.SignalR.Hubs;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace Douji.Backend
 {
@@ -22,8 +25,7 @@ namespace Douji.Backend
 
 			MiddlewareConfiguration.ConfigureMiddleware(app);
 
-			string[] listenUrls = app.Configuration.GetSection("BackendUrls").Get<string[]>() ?? [];
-			foreach (string url in listenUrls)
+			foreach (string url in EnVarHelper.GetUrls("DOUJI_BACKEND_URLS", ["http://localhost:8080"]))
 			{
 				app.Urls.Add(url);
 			}
@@ -46,6 +48,8 @@ namespace Douji.Backend
 		{
 			public static void ConfigureServices(WebApplicationBuilder builder)
 			{
+				AddForwardHeadersConfiguration(builder);
+
 				AddEndpointServices(builder);
 
 				AddCors(builder);
@@ -59,6 +63,17 @@ namespace Douji.Backend
 				}
 
 				AddCustomServices(builder);
+			}
+
+			private static void AddForwardHeadersConfiguration(WebApplicationBuilder builder)
+			{
+				builder.Services.Configure<ForwardedHeadersOptions>(options =>
+				{
+					foreach (IPAddress address in Dns.GetHostAddresses("reverse_proxy"))
+					{
+						options.KnownProxies.Add(address);
+					}
+				});
 			}
 
 			private static void AddCustomServices(WebApplicationBuilder builder) =>
@@ -78,16 +93,30 @@ namespace Douji.Backend
 
 			private static void AddCors(WebApplicationBuilder builder)
 			{
-				string[] frontendUrls = builder.Configuration.GetSection("FrontendUrls").Get<string[]>() ?? [];
-
-				if (frontendUrls.Length > 0)
+				var frontendUrls = EnVarHelper.GetUrls("DOUJI_BACKEND_ALLOWED_CORS_URLS", []);
+				if (frontendUrls.Any())
 				{
 					builder.Services.AddCors(options =>
 					{
 						options.AddDefaultPolicy(policy =>
 						{
-							policy.WithOrigins(frontendUrls);
+							policy.WithOrigins([.. frontendUrls]);
 							policy.WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
+							policy.AllowCredentials();
+							policy.AllowAnyHeader();
+						});
+					});
+				}
+
+				var backendUrls = EnVarHelper.GetUrls("DOUJI_BACKEND_ALLOWED_HOSTS", []);
+				if (backendUrls.Any())
+				{
+					builder.Services.AddCors(options =>
+					{
+						options.AddDefaultPolicy(policy =>
+						{
+							policy.WithOrigins([.. backendUrls]);
+							policy.AllowAnyMethod();
 							policy.AllowCredentials();
 							policy.AllowAnyHeader();
 						});
@@ -116,7 +145,7 @@ namespace Douji.Backend
 					(
 						AuthConstants.AuthorizationPolicies.RoomAccessPolicy,
 						policy =>
-							policy.AddRequirements(new RoomAccessAuthoritationRequirement())
+							policy.AddRequirements(new RoomAccessAuthorizationRequirement())
 					);
 			}
 
@@ -131,13 +160,20 @@ namespace Douji.Backend
 		{
 			public static void ConfigureMiddleware(WebApplication app)
 			{
+				app.UseForwardedHeaders(new ForwardedHeadersOptions
+				{
+					ForwardedHeaders =
+						ForwardedHeaders.XForwardedFor |
+						ForwardedHeaders.XForwardedProto
+				});
+
 				if (app.Environment.IsDevelopment())
 				{
 					app.UseSwagger();
 					app.UseSwaggerUI();
 				}
 
-				if (app.Configuration.GetValue<bool?>("HttpsRedirect") ?? true)
+				if (EnVarHelper.GetBool("DOUJI_BACKEND_HTTPS_REDIRECT") ?? false)
 				{
 					app.UseHttpsRedirection();
 				}
