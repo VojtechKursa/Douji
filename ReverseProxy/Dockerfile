@@ -21,5 +21,7 @@ ADD src/nginx/nginx.conf /etc/nginx/
 ADD src/docker-entrypoint-douji.sh src/certbot-renew.sh /
 ADD src/nginx/sites /app/sites
 
+RUN chmod u+x /docker-entrypoint-douji.sh /certbot-renew.sh
+
 CMD [ "nginx", "-g", "daemon off;" ]
 ENTRYPOINT [ "/docker-entrypoint-douji.sh" ]

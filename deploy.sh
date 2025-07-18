@@ -1,14 +1,25 @@
 #!/bin/sh
 
+
+
 # Backend
-./Backend/build.sh
+cd ./Backend
+
+./build.sh
+
+cd ..
+
+
 
 # Frontend
 cd ./Frontend
+
 npm install
 npm run build
 
 cd ..
+
+
 
 # Deploy
 

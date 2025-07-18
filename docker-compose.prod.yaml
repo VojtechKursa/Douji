@@ -17,4 +17,4 @@ services:
     environment:
       - DOUJI_DEV=0
     volumes:
-      - ssl_certs:/etc/ssl/douji
+      - ssl_certs:/etc/letsencrypt

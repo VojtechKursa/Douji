@@ -14,13 +14,13 @@ cd /
 if [ -n "${DOUJI_HTTPS_PORTS}" -a "${DOUJI_DEV}" -eq 0 ]; then
 	echo "Requesting certificate"
 
-	if [ ! -e /etc/ssl/douji/douji.crt ]; then
+	if [ ! \( \( -e /etc/ssl/douji/privkey.pem \) -a \( -e /etc/ssl/douji/fullchain.pem \) \) ]; then
 		email=''
 		if [ -n $DOUJI_CERTBOT_EMAIL ]; then
 			email="-m $DOUJI_CERTBOT_EMAIL"
 		fi
 
-		domains=echo "$DOUJI_URL" | sed -r 's/\s+/,/g'
+		domains=$(echo "$DOUJI_URL" | sed -r 's/\s+/,/g')
 
 		certbot certonly -v --standalone --cert-name douji -d "$domains" $email --force-renewal --agree-tos --non-interactive
 
