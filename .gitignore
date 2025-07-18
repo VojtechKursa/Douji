@@ -401,3 +401,5 @@ FodyWeavers.xsd
 
 # Custom
 docs/out
+dev_certs/
+.env.local

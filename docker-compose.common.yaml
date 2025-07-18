@@ -1,0 +1,38 @@
+name: Douji
+
+services:
+  frontend:
+    build:
+      context: Frontend
+      dockerfile: Dockerfile
+    environment:
+      - DOUJI_FRONTEND_PORT=3000
+      - DOUJI_FRONTEND_BACKEND_URL=
+      - NEXT_PUBLIC_DEV_BUILD=0
+  backend:
+    build:
+      context: Backend
+      dockerfile: Dockerfile-Production
+    environment:
+      - DOUJI_BACKEND_URLS=http://0.0.0.0:8080
+      - DOUJI_BACKEND_ALLOWED_HOSTS=${DOUJI_URL:?URL of the service is not defined}
+      - DOUJI_BACKEND_ALLOWED_CORS_URLS=
+      - DOUJI_BACKEND_HTTPS_REDIRECT=0
+  reverse_proxy:
+    build:
+      context: ReverseProxy
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOUJI_HTTP_PORTS=80
+      - DOUJI_HTTPS_PORTS=443
+      - DOUJI_HTTPS_REDIRECT=${DOUJI_HTTPS_REDIRECT:-0}
+      - DOUJI_URL=${DOUJI_URL:?URL of the service is not defined}
+      - DOUJI_CERTBOT_EMAIL
+    depends_on:
+      backend:
+        condition: service_started
+      frontend:
+        condition: service_started
