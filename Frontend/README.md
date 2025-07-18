@@ -6,19 +6,10 @@ A ReactJS frontend for the Douji video watch-along service.
 
 ### DOUJI_FRONTEND_PORT
 
-- Port on which the frontend should listen
+- A single port on which the frontend should listen
 - Format: Number
 - Defaults:
   - Binary: 3000
-  - Docker: 3000
-
-### DOUJI_FRONTEND_DOCKER_EXPOSE
-
-- List of frontend's ports a Docker image should expose
-- Has no effect if running outside Docker
-- Format: Identical to Docker's EXPOSE directive
-- Defaults:
-  - Binary: N/A
   - Docker: 3000
 
 ### DOUJI_FRONTEND_BACKEND_URL

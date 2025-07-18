@@ -13,15 +13,6 @@ An ASP.NET Core backend for the Douji video watch-along service.
   - Binary: <http://localhost:8080>
   - Docker: <http://0.0.0.0:8080>
 
-### DOUJI_BACKEND_DOCKER_EXPOSE
-
-- List of backend's ports a Docker image should expose
-- Has no effect if running outside Docker
-- Format: Identical to Docker's EXPOSE directive
-- Defaults:
-  - Binary: N/A
-  - Docker: 8080
-
 ### DOUJI_BACKEND_ALLOWED_HOSTS
 
 - URLs which the backend should serve
