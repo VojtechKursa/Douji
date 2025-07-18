@@ -20,11 +20,11 @@ export class VideoRoomSignalRClient {
 	private readonly onConnectedHandlers: (() => void)[] = [];
 	private readonly onRejectedHandlers: ((reason: string | undefined) => void)[] = [];
 
-	constructor(roomId: number, reservationId: string, username: string) {
+	constructor(backendUrl: string, roomId: number, reservationId: string, username: string) {
 		const query = `roomId=${roomId}&username=${encodeURI(username)}&reservation=${encodeURI(reservationId)}`;
 
 		this.connection = new HubConnectionBuilder()
-			.withUrl(`${ClientConfig.backendUrl}/hub/room?${query}`)
+			.withUrl(`${backendUrl}/hub/room?${query}`)
 			.withAutomaticReconnect()
 			.configureLogging(ClientConfig.devBuild ? LogLevel.Information : LogLevel.Error)
 			.build();

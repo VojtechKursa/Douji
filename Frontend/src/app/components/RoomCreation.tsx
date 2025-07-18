@@ -1,9 +1,9 @@
 import { useState } from "react";
-import ClientConfig from "../lib/ClientConfig";
 import { Room } from "../lib/Room";
 import { Button, Form } from "react-bootstrap";
 import { ConnectionParameters } from "../lib/ConnectionParameters";
 import { joinRoom } from "../lib/JoinNegotiator";
+import { Service, ServicesResolver } from "../lib/ServicesResolver";
 
 abstract class RoomCreationResult {
 	public constructor(public readonly successful: boolean) {}
@@ -41,7 +41,9 @@ export function RoomCreation() {
 
 		const requestBody = JSON.stringify({ name: name, password: actualPassword });
 
-		const response = await fetch(`${ClientConfig.backendUrl}/api/room`, {
+		const backendUrl = await ServicesResolver.instance.getService(Service.Backend);
+
+		const response = await fetch(`${backendUrl}/api/room`, {
 			method: "PUT",
 			body: requestBody,
 			headers: {

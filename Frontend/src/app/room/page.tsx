@@ -7,7 +7,9 @@ import "./style.scss";
 export default function VideoRoomPage() {
 	return (
 		<Container fluid className="mt-2">
-			<Link href="/" className="btn btn-primary mb-2">Back</Link>
+			<Link href="/" className="btn btn-primary mb-2">
+				Back
+			</Link>
 			<VideoRoom />
 		</Container>
 	);

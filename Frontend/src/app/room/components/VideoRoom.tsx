@@ -8,6 +8,7 @@ import { VideoUrlField } from "./VideoUrlField";
 import { ConnectionParameters } from "@/app/lib/ConnectionParameters";
 import { PlayerController } from "../lib/PlayerController";
 import { YouTubeVideoPlayer } from "../lib/Player/Players/YouTubeVideoPlayer";
+import { Service, ServicesResolver } from "@/app/lib/ServicesResolver";
 
 function getQueryRoomId(query?: string | URLSearchParams): number | null {
 	const searchParams: URLSearchParams =
@@ -27,8 +28,14 @@ function getQueryRoomId(query?: string | URLSearchParams): number | null {
 }
 
 export function VideoRoom() {
-	const [playerController, setPlayerController] = useState<PlayerController>();
+	const [connectionParameters, setConnectionParameters] = useState<ConnectionParameters>();
+
+	const [backendUrl, setBackendUrl] = useState<string>();
 	const [videoPlayerElementId, setVideoPlayerElementId] = useState<string>();
+
+	const [playerController, setPlayerController] = useState<PlayerController>();
+	const [videoPlayer, setVideoPlayer] = useState<YouTubeVideoPlayer>();
+	const [signalRClient, setSignalRClient] = useState<VideoRoomSignalRClient>();
 
 	useEffect(() => {
 		const queryRoomId = getQueryRoomId();
@@ -38,32 +45,50 @@ export function VideoRoom() {
 			window.location.href = "/";
 			return;
 		}
+
+		setConnectionParameters(params);
 	}, []);
 
 	useEffect(() => {
-		const params = ConnectionParameters.load();
-		if (params == undefined) {
-			window.location.href = "/";
-			return;
-		}
+		ServicesResolver.instance.getService(Service.Backend).then((result) => setBackendUrl(result));
+	}, []);
 
+	useEffect(() => {
 		if (videoPlayerElementId == undefined) return;
 
 		const videoPlayer = new YouTubeVideoPlayer(videoPlayerElementId);
-		const videoRoomClient = new VideoRoomSignalRClient(params.roomId, params.reservationId, params.username);
-		setPlayerController(new PlayerController(videoPlayer, videoRoomClient));
+		setVideoPlayer(videoPlayer);
+	}, [videoPlayerElementId]);
 
-		videoRoomClient.onForcedDisconnect((reason: string | undefined) => {
+	useEffect(() => {
+		if (backendUrl == undefined || connectionParameters == undefined) return;
+
+		const videoRoomClient = new VideoRoomSignalRClient(
+			backendUrl,
+			connectionParameters.roomId,
+			connectionParameters.reservationId,
+			connectionParameters.username
+		);
+
+		setSignalRClient(videoRoomClient);
+	}, [backendUrl, connectionParameters]);
+
+	useEffect(() => {
+		if (videoPlayer == undefined || signalRClient == undefined) return;
+
+		setPlayerController(new PlayerController(videoPlayer, signalRClient));
+
+		signalRClient.onForcedDisconnect((reason: string | undefined) => {
 			const reasonText: string = reason == undefined ? "No reason given." : `Reason: ${reason}`;
 			alert(`Server closed connection. ${reasonText}`);
 		});
-		videoRoomClient.onClose(() => (window.location.href = "/"));
-		videoRoomClient.onRejected(() => (window.location.href = "/"));
+		signalRClient.onClose(() => (window.location.href = "/"));
+		signalRClient.onRejected(() => (window.location.href = "/"));
 
-		videoRoomClient.connect();
+		signalRClient.connect();
 
 		function beforeHideHandler() {
-			videoRoomClient.disconnect();
+			if (signalRClient != undefined) signalRClient.disconnect();
 		}
 
 		window.addEventListener("pagehide", beforeHideHandler);
@@ -71,7 +96,7 @@ export function VideoRoom() {
 		return () => {
 			window.removeEventListener("pagehide", beforeHideHandler);
 		};
-	}, [videoPlayerElementId]);
+	}, [videoPlayer, signalRClient]);
 
 	return (
 		<div className="d-flex flex-column flex-lg-row">

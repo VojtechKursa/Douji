@@ -2,9 +2,9 @@
 
 namespace Douji.Backend.Auth.Authorization.RoomAccess.Handlers;
 
-public class RoomAccessAuthorizationHandler : AuthorizationHandler<RoomAccessAuthoritationRequirement>
+public class RoomAccessAuthorizationHandler : AuthorizationHandler<RoomAccessAuthorizationRequirement>
 {
-	protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, RoomAccessAuthoritationRequirement requirement)
+	protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, RoomAccessAuthorizationRequirement requirement)
 	{
 		if (context.User.Claims.Any(claim =>
 			claim.Issuer == AuthConstants.ClaimsIssuerLocal &&

@@ -7,7 +7,7 @@ import { Room } from "./lib/Room";
 import { RoomList } from "./components/RoomList";
 import { RoomDetail } from "./components/RoomDetail";
 import { RoomCreation } from "./components/RoomCreation";
-import ClientConfig from "./lib/ClientConfig";
+import { Service, ServicesResolver } from "./lib/ServicesResolver";
 import { Col, Row, Tab, Tabs } from "react-bootstrap";
 
 export default function RoomListPage() {
@@ -15,12 +15,14 @@ export default function RoomListPage() {
 	const [displayedRooms, setDisplayedRooms] = useState<Room[]>([]);
 
 	useEffect(() => {
-		fetch(`${ClientConfig.backendUrl}/api/room`)
-			.then((result) => result.json())
-			.then((json) => {
-				if (!Array.isArray(json)) throw new Error();
-				else setDisplayedRooms(json);
-			});
+		ServicesResolver.instance.getService(Service.Backend).then((backendUrl) => {
+			fetch(`${backendUrl}/api/room`)
+				.then((result) => result.json())
+				.then((json) => {
+					if (!Array.isArray(json)) throw new Error();
+					else setDisplayedRooms(json);
+				});
+		});
 	}, []);
 
 	return (

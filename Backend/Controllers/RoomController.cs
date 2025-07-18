@@ -1,10 +1,7 @@
-﻿using System.Security.Claims;
-using Douji.Backend.Auth;
-using Douji.Backend.Data;
+﻿using Douji.Backend.Data;
 using Douji.Backend.Data.Api.Room;
 using Douji.Backend.Data.Database.Interfaces.DAO;
 using Douji.Backend.Model;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

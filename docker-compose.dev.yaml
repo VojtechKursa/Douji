@@ -1,0 +1,17 @@
+services:
+  backend:
+    extends:
+      file: docker-compose.common.yaml
+      service: backend
+  frontend:
+    extends:
+      file: docker-compose.common.yaml
+      service: frontend
+  reverse_proxy:
+    extends:
+      file: docker-compose.common.yaml
+      service: reverse_proxy
+    environment:
+      - DOUJI_DEV=1
+    volumes:
+      - ./dev_certs:/etc/ssl/douji:ro
