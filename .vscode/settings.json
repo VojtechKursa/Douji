@@ -2,11 +2,17 @@
 	"cSpell.words": [
 		"Autoincrement",
 		"buildtransitive",
+		"certbot",
+		"certonly",
 		"contentfiles",
 		"Douji",
 		"enduml",
 		"esproj",
+		"fullchain",
 		"highres",
+		"keepalive",
+		"letsencrypt",
+		"privkey",
 		"Sendfile",
 		"signalr",
 		"startuml",
@@ -28,5 +34,6 @@
 		"**/Dockerfile*"
 	],
 	"plantuml.exportOutDir": "docs/out",
-	"plantuml.exportSubFolder": false
+	"plantuml.exportSubFolder": false,
+	"python.analysis.typeCheckingMode": "strict"
 }
