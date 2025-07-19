@@ -25,9 +25,11 @@ if [ -n "${DOUJI_HTTPS_PORTS}" -a "${DOUJI_DEV}" -eq 0 ]; then
 		certbot certonly -v --standalone --cert-name douji -d "$domains" $email --force-renewal --agree-tos --non-interactive
 
 		ln -s /etc/letsencrypt/live/douji /etc/ssl/douji
-
-		/certbot-renew.sh &
+	else
+		/certbot-renew.sh --once
 	fi
+
+	/certbot-renew.sh --skip &
 else
 	echo "Skipping certificate request"
 fi
