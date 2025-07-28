@@ -2,9 +2,6 @@ name: Douji
 
 services:
   frontend:
-    build:
-      context: Frontend
-      dockerfile: Dockerfile
     environment:
       - DOUJI_FRONTEND_PORT=3000
       - DOUJI_FRONTEND_BACKEND_URL=

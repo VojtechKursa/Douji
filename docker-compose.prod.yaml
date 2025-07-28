@@ -10,6 +10,9 @@ services:
     extends:
       file: docker-compose.common.yaml
       service: frontend
+    build:
+      context: Frontend
+      dockerfile: Dockerfile-Production
   reverse_proxy:
     extends:
       file: docker-compose.common.yaml

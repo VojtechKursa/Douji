@@ -7,6 +7,11 @@ services:
     extends:
       file: docker-compose.common.yaml
       service: frontend
+    build:
+      context: Frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./Frontend:/app:ro
   reverse_proxy:
     extends:
       file: docker-compose.common.yaml
