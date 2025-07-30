@@ -1,18 +1,21 @@
+name: Douji
+
 volumes:
   ssl_certs:
 
 services:
-  backend:
-    extends:
-      file: docker-compose.common.yaml
-      service: backend
   frontend:
     extends:
       file: docker-compose.common.yaml
       service: frontend
     build:
-      context: Frontend
-      dockerfile: Dockerfile-Production
+      target: prod
+  backend:
+    extends:
+      file: docker-compose.common.yaml
+      service: backend
+    build:
+      target: final
   reverse_proxy:
     extends:
       file: docker-compose.common.yaml

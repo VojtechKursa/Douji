@@ -1,17 +1,28 @@
+name: Douji
+
 services:
-  backend:
-    extends:
-      file: docker-compose.common.yaml
-      service: backend
   frontend:
     extends:
       file: docker-compose.common.yaml
       service: frontend
     build:
-      context: Frontend
-      dockerfile: Dockerfile
+      target: dev
     volumes:
       - ./Frontend:/app:ro
+      - ./Frontend/.next:/app/.next
+  backend:
+    extends:
+      file: docker-compose.common.yaml
+      service: backend
+    build:
+      args:
+        - BUILD_CONFIGURATION=Debug
+      target: base
+    volumes:
+      - ./Backend:/app:ro
+      - ./Backend/bin:/app/bin
+      - ./Backend/obj:/app/obj
+    entrypoint: dotnet run
   reverse_proxy:
     extends:
       file: docker-compose.common.yaml
