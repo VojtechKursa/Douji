@@ -7,7 +7,8 @@ ENV DOUJI_HTTP_PORTS=80 \
 	DOUJI_HTTPS_PORTS=443 \
 	DOUJI_HTTPS_REDIRECT=0 \
 	DOUJI_URL=localhost \
-	DOUJI_DEV=1
+	DOUJI_DEV=1 \
+	DOUJI_CERTBOT_EMAIL=
 
 
 
@@ -22,7 +23,7 @@ ADD [ "src/nginx/nginx.conf", "/etc/nginx/nginx.conf" ]
 ADD [ "src/nginx/sites", "/app/sites" ]
 
 HEALTHCHECK \
-	--start-period=5s \
+	--start-period=4s \
 	--start-interval=2s \
 	--interval=30s \
 	--timeout=30s \

@@ -28,3 +28,8 @@ services:
       - DOUJI_DEV=1
     volumes:
       - ./dev_certs:/etc/ssl/douji:ro
+    depends_on:
+      backend:
+        condition: service_started
+      frontend:
+        condition: service_started

@@ -71,7 +71,7 @@ WORKDIR /app
 COPY --from=build --chown=next [ "/app/.next", "./.next" ]
 
 HEALTHCHECK \
-	--start-period=2s \
+	--start-period=3s \
 	--start-interval=2s \
 	--interval=30s \
 	--timeout=30s \

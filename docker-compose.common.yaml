@@ -33,6 +33,6 @@ services:
       - DOUJI_CERTBOT_EMAIL
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
       frontend:
-        condition: service_started
+        condition: service_healthy

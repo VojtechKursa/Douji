@@ -10,6 +10,7 @@ services:
       service: frontend
     build:
       target: prod
+    restart: unless-stopped
   backend:
     extends:
       file: docker-compose.common.yaml
@@ -18,6 +19,7 @@ services:
       target: final
       args:
         - BUILD_CONFIGURATION=Release
+    restart: unless-stopped
   reverse_proxy:
     extends:
       file: docker-compose.common.yaml
@@ -26,3 +28,4 @@ services:
       - DOUJI_DEV=0
     volumes:
       - ssl_certs:/etc/letsencrypt
+    restart: unless-stopped
