@@ -12,7 +12,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Backend/Dockerfile
     environment:
       - DOUJI_BACKEND_URLS=http://0.0.0.0:8080
       - DOUJI_BACKEND_ALLOWED_HOSTS=${DOUJI_URL:?URL of the service is not defined}

@@ -15,14 +15,11 @@ services:
       file: docker-compose.common.yaml
       service: backend
     build:
-      args:
-        - BUILD_CONFIGURATION=Debug
-      target: base
+      target: dev
     volumes:
       - ./Backend:/app:ro
       - ./Backend/bin:/app/bin
       - ./Backend/obj:/app/obj
-    entrypoint: dotnet run
   reverse_proxy:
     extends:
       file: docker-compose.common.yaml

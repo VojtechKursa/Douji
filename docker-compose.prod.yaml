@@ -16,6 +16,8 @@ services:
       service: backend
     build:
       target: final
+      args:
+        - BUILD_CONFIGURATION=Release
   reverse_proxy:
     extends:
       file: docker-compose.common.yaml
