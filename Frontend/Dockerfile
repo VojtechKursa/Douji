@@ -10,7 +10,7 @@ ENV DOUJI_FRONTEND_PORT=3000 \
 EXPOSE 3000
 
 # Install NodeJS runtime and NPM package manager
-RUN apk add nodejs npm
+RUN apk add nodejs npm curl
 
 # Setup user
 # User has to be added manually because the USER directive doesn't correctly create user on alpine
@@ -69,6 +69,14 @@ WORKDIR /app
 
 # Copy built application
 COPY --from=build --chown=next [ "/app/.next", "./.next" ]
+
+HEALTHCHECK \
+	--start-period=2s \
+	--start-interval=2s \
+	--interval=30s \
+	--timeout=30s \
+	--retries=3 \
+	CMD curl --fail --silent -o /dev/null 127.0.0.1:$DOUJI_FRONTEND_PORT
 
 # Define entrypoint
 ENTRYPOINT [ "npm", "run", "start_docker" ]
