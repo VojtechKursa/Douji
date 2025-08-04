@@ -23,8 +23,6 @@ if [ -n "${DOUJI_HTTPS_PORTS}" -a "${DOUJI_DEV}" -eq 0 ]; then
 		domains=$(echo "$DOUJI_URL" | sed -r 's/\s+/,/g')
 
 		certbot certonly -v --standalone --cert-name douji -d "$domains" $email --force-renewal --agree-tos --non-interactive
-
-		ln -s /etc/letsencrypt/live/douji /etc/ssl/douji
 	else
 		/certbot-renew.sh --once
 	fi

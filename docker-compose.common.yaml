@@ -11,8 +11,8 @@ services:
       - NEXT_PUBLIC_DEV_BUILD=0
   backend:
     build:
-      context: Backend
-      dockerfile: Dockerfile-Production
+      context: .
+      dockerfile: Backend/Dockerfile
     environment:
       - DOUJI_BACKEND_URLS=http://0.0.0.0:8080
       - DOUJI_BACKEND_ALLOWED_HOSTS=${DOUJI_URL:?URL of the service is not defined}
@@ -33,6 +33,6 @@ services:
       - DOUJI_CERTBOT_EMAIL
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
       frontend:
-        condition: service_started
+        condition: service_healthy
