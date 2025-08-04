@@ -29,4 +29,5 @@ services:
     volumes:
       - ssl_certs:/etc/ssl/douji
       - lets_encrypt:/etc/letsencrypt
+      - logs_nginx:/var/log/nginx
     restart: unless-stopped
