@@ -16,7 +16,14 @@ EXPOSE 80 443
 
 
 
-RUN mkdir -p "/var/www/certbot"
+# Prepare environment for certificates
+VOLUME [ "/etc/ssl/douji" ]
+VOLUME [ "/etc/letsencrypt" ]
+
+RUN mkdir -p "/var/www/certbot" "/etc/letsencrypt/live" && \
+	ln -s "/etc/ssl/douji" "/etc/letsencrypt/live/douji"
+
+
 
 ADD --chmod=755 [ "src/docker-entrypoint-douji.sh", "src/certbot-renew.sh", "/" ]
 ADD [ "src/nginx/nginx.conf", "/etc/nginx/nginx.conf" ]

@@ -27,5 +27,6 @@ services:
     environment:
       - DOUJI_DEV=0
     volumes:
-      - ssl_certs:/etc/letsencrypt
+      - ssl_certs:/etc/ssl/douji
+      - lets_encrypt:/etc/letsencrypt
     restart: unless-stopped
