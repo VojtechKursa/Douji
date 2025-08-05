@@ -13,6 +13,7 @@
 		"esproj",
 		"fullchain",
 		"highres",
+		"HSTS",
 		"keepalive",
 		"letsencrypt",
 		"nodelay",

@@ -21,6 +21,20 @@ def get_env_bool(name: str) -> bool | None:
         f"Environment variable {name} has invalid syntax: Expected bool, actual value: '{val}'")
 
 
+def get_env_int(name: str) -> int | None:
+    val = os.getenv(name)
+
+    if val == None:
+        return None
+
+    val = val.strip()
+
+    if val.isdecimal():
+        return int(val)
+    else:
+        return None
+
+
 def get_env_ints(name: str) -> list[int]:
     val = os.getenv(name)
 
@@ -47,6 +61,7 @@ HTTP_PORTS = get_env_ints("DOUJI_HTTP_PORTS")
 HTTPS_PORTS = get_env_ints("DOUJI_HTTPS_PORTS")
 URLS = get_env_strings("DOUJI_URL")
 DEV = get_env_bool("DOUJI_DEV")
+HSTS_MAX_AGE = get_env_int("DOUJI_HSTS_MAX_AGE")
 
 ACME_LOCATION = [
     "location /.well-known/acme-challenge/ {",
@@ -122,18 +137,28 @@ def set_ssl_certs(input: str) -> str:
     return input.replace("${CERTS};", replacement)
 
 
+def set_hsts(input: str) -> str:
+    replacement = ""
+    if HSTS_MAX_AGE != None and HSTS_MAX_AGE > 0:
+        replacement = f'add_header Strict-Transport-Security "max-age={HSTS_MAX_AGE}" always;'
+
+    return input.replace("${HSTS};", replacement)
+
+
 def main():
     input_file = open(INPUT_FILE, "rt")
     output_file = open(OUTPUT_FILE, "wt")
 
     input = "".join(input_file.readlines())
-    output = set_ssl_certs(
+    output = set_hsts(
+        set_ssl_certs(
         set_acme_location(
-            set_url(
-                set_ports(
-                    set_redirect(input)
-                )
-            )
+        set_url(
+        set_ports(
+        set_redirect(input)
+        )
+        )
+        )
         )
     )
 
