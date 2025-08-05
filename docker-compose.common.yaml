@@ -29,7 +29,7 @@ services:
       - DOUJI_HTTP_PORTS=80
       - DOUJI_HTTPS_PORTS=443
       - DOUJI_HTTPS_REDIRECT=${DOUJI_HTTPS_REDIRECT:-0}
-      - DOUJI_HSTS_MAX_AGE=0
+      - DOUJI_HSTS_MAX_AGE=${DOUJI_HSTS_MAX_AGE:-0}
       - DOUJI_URL=${DOUJI_URL:?URL of the service is not defined}
       - DOUJI_CERTBOT_EMAIL
     depends_on:
