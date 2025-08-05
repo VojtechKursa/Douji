@@ -15,6 +15,7 @@
 		"highres",
 		"keepalive",
 		"letsencrypt",
+		"nodelay",
 		"privkey",
 		"Sendfile",
 		"signalr",
