@@ -2,6 +2,8 @@ name: Douji
 
 volumes:
   ssl_certs:
+  lets_encrypt:
+  logs_nginx:
 
 services:
   frontend:
