@@ -24,6 +24,8 @@ services:
     extends:
       file: docker-compose.common.yaml
       service: reverse_proxy
+    build:
+      target: dev
     environment:
       - DOUJI_DEV=1
     volumes:
