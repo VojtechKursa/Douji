@@ -15,12 +15,18 @@ EXPOSE 80 443
 # Add volume for storing SSL certificates
 VOLUME [ "/etc/ssl/douji" ]
 
+# Set working directory
+WORKDIR /
+
 # Install Python for template generation (it's required by certbot in production anyway)
 RUN apk add python3
 
+# Link Nginx config file to data folder
+RUN ln -sf /app/data/nginx/nginx.conf /etc/nginx/nginx.conf
+
 # Define entrypoint
 CMD [ "nginx", "-g", "daemon off;" ]
-ENTRYPOINT [ "/docker-entrypoint-douji.sh" ]
+ENTRYPOINT [ "/app/scripts/docker-entrypoint.sh" ]
 
 
 
@@ -29,9 +35,10 @@ ENTRYPOINT [ "/docker-entrypoint-douji.sh" ]
 FROM base AS files
 
 # Add project files
-ADD --chmod=755 [ "src/docker-entrypoint-douji.sh", "src/certbot-renew.sh", "/" ]
-ADD [ "src/nginx/nginx.conf", "/etc/nginx/nginx.conf" ]
-ADD [ "src/nginx/sites", "/app/sites" ]
+ADD [ "app", "/app" ]
+
+# Make scripts executable
+RUN chmod +x /app/scripts/*.sh
 
 
 
@@ -58,9 +65,7 @@ RUN mkdir -p "/var/www/certbot" "/etc/letsencrypt/live" && \
 	ln -s "/etc/ssl/douji" "/etc/letsencrypt/live/douji"
 
 # Copy project files here so their change doesn't invalidate steps above
-COPY --from=files --chmod=755 [ "/docker-entrypoint-douji.sh", "/certbot-renew.sh", "/" ]
-COPY --from=files [ "/etc/nginx/nginx.conf", "/etc/nginx/nginx.conf" ]
-COPY --from=files [ "app/sites", "/app/sites" ]
+COPY --from=files [ "/app", "/app" ]
 
 # Add health check
 HEALTHCHECK \

@@ -1,7 +1,7 @@
 import os
 
-INPUT_FILE = "douji.conf.template"
-OUTPUT_FILE = "douji.conf"
+INPUT_FILE = "/app/data/nginx/sites/douji.conf.template"
+OUTPUT_FILE = "/etc/nginx/conf.d/douji.conf"
 
 
 def get_env_bool(name: str) -> bool | None:
