@@ -1,40 +1,81 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-
-USER $APP_UID
+# Base stage, used as base for all following stages and when running from Visual Studio in fast mode
+FROM vojtechkursa/dotnet:aspnet-8.0-alpine AS base
 
 # Environment variables
-ENV DOUJI_BACKEND_URLS=http://0.0.0.0:8080
-ENV DOUJI_BACKEND_ALLOWED_HOSTS=
-ENV DOUJI_BACKEND_ALLOWED_CORS_URLS=http://localhost:3000
-ENV DOUJI_BACKEND_HTTPS_REDIRECT=0
-
-
+ENV DOUJI_BACKEND_URLS=http://0.0.0.0:8080 \
+	DOUJI_BACKEND_ALLOWED_HOSTS= \
+	DOUJI_BACKEND_ALLOWED_CORS_URLS=http://localhost:3000,http://localhost,https://localhost \
+	DOUJI_BACKEND_HTTPS_REDIRECT=0
 
 EXPOSE 8080
 
-WORKDIR /app
+WORKDIR "/app"
 
-# This stage is used to build the service project
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
+
+# Stage with installed .NET SDK
+FROM base AS sdk
+
+RUN apk add dotnet8-sdk
+
+
+
+# Stage used for running the backend in development mode
+FROM sdk AS dev
+
+WORKDIR "/app"
+
+VOLUME [ "/app" ]
+VOLUME [ "/app/bin" ]
+VOLUME [ "/app/obj" ]
+
+ENTRYPOINT [ "dotnet", "run" ]
+
+
+
+# This stage is used to build the production version of the project
+FROM sdk AS build
+
 ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["Backend/Douji Backend.csproj", "Backend/"]
+
+WORKDIR "/src"
+ADD [ "Backend/Douji Backend.csproj", "Backend/Douji Backend.csproj" ]
 RUN dotnet restore "./Backend/Douji Backend.csproj"
-COPY . .
+
+ADD [ "Backend/", "Backend/" ]
 WORKDIR "/src/Backend"
-RUN dotnet build "./Douji Backend.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./Douji Backend.csproj" -c $BUILD_CONFIGURATION -o "/app/build"
 
-# This stage is used to publish the service project to be copied to the final stage
+
+
+# This stage is used to publish the production version of the project
 FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Douji Backend.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
+ARG BUILD_CONFIGURATION
+
+WORKDIR "/src/Backend"
+RUN dotnet publish "./Douji Backend.csproj" -c $BUILD_CONFIGURATION -o "/app/publish" /p:UseAppHost=false
+
+
+
+# This stage is used in production:
+# - To run the project or
+# - When running from Visual Studio in regular mode (Default when not using the Debug configuration)
 FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
+
+RUN apk add curl
+
+USER dotnet
+
+WORKDIR "/app"
+COPY --from=publish --chown=dotnet:dotnet "/app/publish" .
+
+HEALTHCHECK \
+	--start-interval=3s \
+	--start-period=2s \
+	--interval=30s \
+	--timeout=30s \
+	--retries=3 \
+	CMD curl --fail --silent -o /dev/null localhost:8080/api/room
 
 ENTRYPOINT ["dotnet", "Douji.Backend.dll"]

@@ -1,5 +1,8 @@
 {
 	"cSpell.words": [
+		"addgroup",
+		"adduser",
+		"ASPNETCORE",
 		"Autoincrement",
 		"buildtransitive",
 		"certbot",
@@ -12,6 +15,7 @@
 		"highres",
 		"keepalive",
 		"letsencrypt",
+		"nodelay",
 		"privkey",
 		"Sendfile",
 		"signalr",

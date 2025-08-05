@@ -1,12 +1,7 @@
 #!/bin/sh
 
 # Generate site config
-
-cd /app/sites
-python make_conf.py
-cp douji.conf /etc/nginx/conf.d/douji.conf
-
-cd /
+python /app/scripts/make_conf.py
 
 
 
@@ -23,11 +18,11 @@ if [ -n "${DOUJI_HTTPS_PORTS}" -a "${DOUJI_DEV}" -eq 0 ]; then
 		domains=$(echo "$DOUJI_URL" | sed -r 's/\s+/,/g')
 
 		certbot certonly -v --standalone --cert-name douji -d "$domains" $email --force-renewal --agree-tos --non-interactive
-
-		ln -s /etc/letsencrypt/live/douji /etc/ssl/douji
-
-		/certbot-renew.sh &
+	else
+		/app/scripts/certbot-renew.sh --once
 	fi
+
+	/app/scripts/certbot-renew.sh --skip &
 else
 	echo "Skipping certificate request"
 fi

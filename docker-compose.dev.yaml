@@ -1,17 +1,37 @@
+name: Douji
+
 services:
-  backend:
-    extends:
-      file: docker-compose.common.yaml
-      service: backend
   frontend:
     extends:
       file: docker-compose.common.yaml
       service: frontend
+    build:
+      target: dev
+    volumes:
+      - ./Frontend:/app:ro
+      - ./Frontend/.next:/app/.next
+  backend:
+    extends:
+      file: docker-compose.common.yaml
+      service: backend
+    build:
+      target: dev
+    volumes:
+      - ./Backend:/app:ro
+      - ./Backend/bin:/app/bin
+      - ./Backend/obj:/app/obj
   reverse_proxy:
     extends:
       file: docker-compose.common.yaml
       service: reverse_proxy
+    build:
+      target: dev
     environment:
       - DOUJI_DEV=1
     volumes:
       - ./dev_certs:/etc/ssl/douji:ro
+    depends_on:
+      backend:
+        condition: service_started
+      frontend:
+        condition: service_started

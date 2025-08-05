@@ -1,5 +1,8 @@
 ${HTTPS_REDIRECT};
 
+limit_req_zone $binary_remote_addr zone=douji_backend:10m rate=10r/s;
+limit_req_zone $binary_remote_addr zone=douji_frontend:10m rate=30r/s;
+
 server {
 	${PORTS};
 
@@ -16,19 +19,28 @@ server {
 	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 	proxy_set_header X-Forwarded-Proto $scheme;
 
+	limit_req_status 429;
+	limit_req_log_level warn;
+
 	${ACME_LOCATION};
 
 	location / {
 		proxy_pass http://frontend:3000;
+
+		limit_req zone=douji_frontend burst=30 delay=25;
 	}
 
 	location /api/ {
 		proxy_pass http://backend:8080;
 
 		proxy_cache off;
+
+		limit_req zone=douji_backend burst=10 nodelay;
 	}
 
 	location /hub/ {
 		proxy_pass http://backend:8080;
+
+		limit_req zone=douji_backend burst=10 nodelay;
 	}
 }

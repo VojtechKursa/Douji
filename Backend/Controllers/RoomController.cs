@@ -44,6 +44,7 @@ public class RoomController(IDoujiInMemoryDb database) : Controller
 		}
 	}
 
+	/*
 	[HttpPost("{id}")]
 	public IActionResult Update(int id, RoomApiUpdateRequest update)
 	{
@@ -67,6 +68,7 @@ public class RoomController(IDoujiInMemoryDb database) : Controller
 
 		return NoContent();
 	}
+	*/
 
 	[HttpPost("auth")]
 	public async Task<IActionResult> Authenticate([FromQuery] int roomId, [FromBody] RoomAuthenticationRequest request)
@@ -94,7 +96,7 @@ public class RoomController(IDoujiInMemoryDb database) : Controller
 			return Unauthorized();
 		}
 
-		UserReservation? reservation = null;
+		UserReservation? reservation;
 
 		do
 		{
